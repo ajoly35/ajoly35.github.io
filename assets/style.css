@@ -1,0 +1,209 @@
+:root {
+  --ink: #1a1a1a;
+  --muted: #5a5a5a;
+  --line: #e2e2e2;
+  --accent: #7a1f2b; /* understated academic maroon */
+  --bg: #fdfcfb;
+  --max-width: 720px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  line-height: 1.6;
+  font-size: 17px;
+}
+
+.wrap {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+header.site {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+header.site .name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+nav.site {
+  display: flex;
+  gap: 1.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.92rem;
+}
+
+nav.site a {
+  color: var(--muted);
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 2px solid transparent;
+}
+
+nav.site a:hover,
+nav.site a[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin: 0 0 0.4rem;
+  font-weight: 600;
+}
+
+h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.subtitle {
+  color: var(--muted);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.95rem;
+  margin-bottom: 1.75rem;
+}
+
+.hero {
+  display: flex;
+  gap: 1.75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.hero img.photo {
+  width: 128px;
+  height: 128px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+.photo-placeholder {
+  display: none; /* shown by index.html's onerror handler when assets/photo.jpg is missing */
+  width: 128px;
+  height: 128px;
+  border-radius: 6px;
+  border: 1.5px dashed var(--muted);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 0.5rem;
+}
+.photo-placeholder code {
+  font-size: 0.68rem;
+  background: var(--line);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+
+.hero-text { flex: 1; min-width: 240px; }
+
+p { margin: 0 0 1rem; }
+
+a { color: var(--accent); }
+a:hover { text-decoration: none; }
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+}
+
+.links a {
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.35rem 0.7rem;
+  color: var(--ink);
+}
+.links a:hover { border-color: var(--accent); color: var(--accent); }
+
+.entry {
+  margin-bottom: 1.6rem;
+  padding-bottom: 1.6rem;
+  border-bottom: 1px solid var(--line);
+}
+.entry:last-child { border-bottom: none; }
+
+.entry .title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.entry .meta {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.entry .actions {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+}
+.entry .actions a { margin-right: 1rem; }
+
+.cta {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff !important;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.92rem;
+}
+.cta:hover { opacity: 0.88; }
+
+.stub {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+footer.site {
+  margin-top: 4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 480px) {
+  .hero { flex-direction: column; }
+  .hero img.photo { width: 96px; height: 96px; }
+}
