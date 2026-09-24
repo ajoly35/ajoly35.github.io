@@ -102,30 +102,6 @@ h2 {
   flex-shrink: 0;
 }
 
-.photo-placeholder {
-  display: none; /* shown by index.html's onerror handler when assets/photo.jpg is missing */
-  width: 128px;
-  height: 128px;
-  border-radius: 6px;
-  border: 1.5px dashed var(--muted);
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  flex-shrink: 0;
-  color: var(--muted);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  font-size: 0.78rem;
-  text-align: center;
-  padding: 0.5rem;
-}
-.photo-placeholder code {
-  font-size: 0.68rem;
-  background: var(--line);
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px;
-}
-
 .hero-text { flex: 1; min-width: 240px; }
 
 p { margin: 0 0 1rem; }

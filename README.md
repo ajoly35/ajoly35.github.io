@@ -1,34 +1,36 @@
-# adrienjoly.github.io (working title)
+# ajoly35.github.io
 
 Personal academic site, rebuilt from https://sites.google.com/view/adrienjoly/home
-Plain HTML + one CSS file — no build step, no framework, so it's easy to
-edit directly (open a `.html` file, change the text, save).
+Live at https://ajoly35.github.io. Plain HTML + one CSS file — no build
+step, no framework, so it's easy to edit directly (open a `.html` file,
+change the text, save, commit, push).
 
 ## Structure
 ```
 index.html      — home / bio
-cv.html         — links to the CV PDF (same Drive link as the current site)
+cv.html         — CV, hosted directly as assets/cv.pdf
 research.html   — working papers
 writing.html    — op-eds, blog posts, policy briefs
+talks.html      — panels, talks, events organised or hosted
 assets/style.css
-assets/photo.jpg  — NOT ADDED YET, drop a real photo here (index.html already references it and fails gracefully if missing)
+assets/favicon.svg
+assets/photo.jpg  — profile photo
+assets/cv.pdf     — current CV
+assets/talks/     — event photos
 ```
 
-## Content still pending
-- Profile photo (`assets/photo.jpg`)
-- Home page "Reading & piano" section — stub only, ties into the
-  reading/piano tracking already set up under `_system/culture/` in the
-  wider Claude Code system; fill in once there's something real to show
-- CV: currently just links out to the same Google Drive PDF as the
-  current site. Swap for an inline PDF or HTML version if wanted later.
-
-## Deploying to GitHub Pages
-Not done yet — this is a local build for review first. To go live:
+## Updating
+Edit the relevant `.html` file directly, then from this folder:
 ```bash
-gh repo create ajoly35.github.io --public --source=. --remote=origin
-git add -A && git commit -m "Initial site"
-git push -u origin main
+git add -A && git commit -m "..."
+git push
 ```
-Site would then be live at `https://ajoly35.github.io` within a few minutes.
-Needs explicit go-ahead first — creating the repo and the first push are
-both gated per the confirmation rules.
+Nothing pushes automatically — commit and push are separate, deliberate
+steps each time.
+
+## Still open (see CHECKLIST.md for the full, current list)
+- Talks page: confirm exact wording for the European Conference role,
+  add a date for the Puga interview, confirm everyone in the group
+  photos is comfortable being on a public site.
+- Old Google Sites page: point it at the new site, or unpublish it.
+- Optional: custom domain via a `CNAME` file.
