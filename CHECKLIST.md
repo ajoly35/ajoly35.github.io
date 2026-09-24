@@ -1,27 +1,46 @@
 # Presentable-site checklist (ajoly35.github.io)
 
-_Drafted 2026-09-24. The site is live (GitHub Pages, `main` branch); local changes only go live after a commit and push._
+_Drafted 2026-09-24. Updated same day. The site is live (GitHub Pages,
+`main` branch); local changes only go live after a commit and push._
 
-## Blocking: visible to visitors today
-- [ ] **Push today's changes** (Talks page, nav link, photos). Until then `ajoly35.github.io/talks.html` returns 404, and the CV now links to it.
-- [ ] **Profile photo**: add `assets/photo.jpg` (square, at least 256 × 256 px). The live home page currently shows a dashed "Add photo" box.
-- [ ] **Remove the note to Claude on the CV page** (`cv.html`: "drop the PDF into assets/ and tell Claude…"). It is visible to visitors.
-- [ ] **Remove or fill the "Reading & piano" stub** on the home page ("Not filled in yet…").
-- [ ] **Replace the CV PDF**: the Drive file linked from the home and CV pages is the old version (Nielsen wording, Google Sites URL, no STICERD link). Either overwrite that Drive file with `~/Downloads/Adrien_Joly_CV_updated.pdf` (keeps the same link) or put the PDF in `assets/cv.pdf` and link to it.
+## Done
+- [x] Push the Talks page, nav link, photos (confirmed on origin/main).
+- [x] Profile photo added (`assets/photo.jpg`, from the real photo you gave me).
+- [x] Removed the note to Claude on the CV page.
+- [x] Removed the "Reading & piano" stub — re-add once there's something real.
+- [x] CV now hosted directly at `assets/cv.pdf` (the updated one-page
+      version) instead of linking to the old Drive file — no more stale
+      copy to keep in sync.
+- [x] Home page "Background": added the Jaravel fellowship + GenAI
+      research focus, matching the CV.
+- [x] Favicon added (simple "AJ" mark) and linked from all 5 pages.
+- [x] Open Graph tags added to the home page.
+- [x] README rewritten to match the site as it actually is now.
+- [x] Checked all 4 remaining Drive links (2 research drafts, 2 writing
+      pieces) return HTTP 200 unauthenticated — a reasonable signal
+      they're public, not a full guarantee (Drive can 200 a
+      request-access page too). Worth a manual click-through once.
+- [ ] Committed locally (2f8a869) — **not pushed yet**, only "commit" was
+      asked for. Say the word and I'll push.
 
-## Talks page: confirm before or soon after publishing
-- [ ] European Conference: your role. The page says "Opening the panel" (from the lectern photo) and the CV says you conceived and hosted it. Adjust if you were organiser, moderator or introducer.
-- [ ] Benoît Puga interview at LSE: add the date (month and year), and the name of the organising society if relevant.
-- [ ] Nadia Crisan photo: your note says "at Princeton"; the LISD trip was in Paris and Berlin. The caption currently gives no location. Add one if you know it.
-- [ ] Group photos show other students (Philippe, Puga). Make sure people in them are comfortable being on a public site.
+## Talks page: still needs you, not guessable
+- [ ] European Conference: your role. The page currently says "moderated
+      by Helena Malikova" and the photo caption says "Opening the panel,"
+      but the CV's new Event-organizing bullet says you "conceived and
+      hosted" it. Those two descriptions are in tension — worth
+      resolving before this goes to an employer, since the CV and the
+      site should agree.
+- [ ] Benoît Puga interview at LSE: still no date or organising society.
+- [ ] Nadia Crisan photo: caption currently names no city (correctly, I
+      think — the entry above it already says the trip covered "Paris
+      and Berlin" generally, and I didn't want to guess which one that
+      specific photo was taken in). Add one if you know it.
+- [ ] Group photos (European Conference, Philippe, Puga) show other
+      people. Make sure everyone in them is comfortable being on a
+      public site — I haven't asked any of them, obviously.
 
-## Polish
-- [ ] Favicon (`favicon.ico` currently 404).
-- [ ] Open Graph tags (`og:title`, `og:description`, `og:image`) so links shared on LinkedIn, X and WhatsApp show a preview.
-- [ ] Check that every Google Drive link (CV, 2 research drafts, 2 writing pieces) is set to "Anyone with the link can view".
-- [ ] Home page "Background": add the current fellowship with Xavier Jaravel (as in the CV) and a one-line research focus.
-- [ ] Writing page: check it lists the Harvard French Review (2026) and TechPolicy.Press pieces from the CV.
-- [ ] Check the site on a phone. The navigation now has 5 links and wraps.
-- [ ] Update `README.md`: the title still says `adrienjoly.github.io`, and the "Deploying" section describes a repo that already exists.
-- [ ] Point the old Google Sites page to the new site (a single line at the top of the home page), or unpublish it once the new one is complete.
-- [ ] Optional: custom domain (e.g. `adrienjoly.com`) via a `CNAME` file.
+## Polish still open
+- [ ] Mobile check — nav now has 5 links; I haven't tested a real phone.
+- [ ] Point the old Google Sites page at the new one, or unpublish it —
+      that's a different Google product, outside what I can edit here.
+- [ ] Optional: custom domain via a `CNAME` file.
