@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Ciblage terrain 2027 v4</title>
+<meta name="description" content="Carte des communes et bureaux de vote classés par potentiel de gain de voix (méthode Pons), avec la démographie INSEE et les candidatures Horizons 2024.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #eceff2; --surface: #ffffff; --surface-2: #f5f7f8;
+  --ink: #101820; --ink-2: #44515c; --muted: #737f8a;
+  --line: #d6dde3; --line-2: #e7ecef;
+  --accent: #0d6a5f; --accent-ink: #ffffff; --accent-soft: #dcefeb;
+  --hor: #eb6834; --bar: #2a78d6; --bar-soft: #cde2fb;
+  --map-sea: #e1e8ed; --map-land: #f9fbfc; --map-border: #b3bfc9; --map-null: #c6cdd4; --map-dim: #b7c0c8;
+  --r0: #cde2fb; --r1: #9ec5f4; --r2: #6da7ec; --r3: #3987e5; --r4: #256abf; --r5: #184f95; --r6: #0d366b;
+  --font-d: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --font-b: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-m: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0c1115; --surface: #141b21; --surface-2: #19222a;
+    --ink: #e8edf1; --ink-2: #aab6c0; --muted: #7e8a95;
+    --line: #28333c; --line-2: #1f2931;
+    --accent: #3cb3a2; --accent-ink: #06201c; --accent-soft: #12302c;
+    --hor: #f07a47; --bar: #3987e5; --bar-soft: #1d3656;
+    --map-sea: #0f151a; --map-land: #18212a; --map-border: #36444f; --map-null: #3b4651; --map-dim: #2d3741;
+    --r0: #1d3656; --r1: #1c5cab; --r2: #2a78d6; --r3: #3987e5; --r4: #6da7ec; --r5: #9ec5f4; --r6: #cde2fb;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c1115; --surface: #141b21; --surface-2: #19222a;
+  --ink: #e8edf1; --ink-2: #aab6c0; --muted: #7e8a95;
+  --line: #28333c; --line-2: #1f2931;
+  --accent: #3cb3a2; --accent-ink: #06201c; --accent-soft: #12302c;
+  --hor: #f07a47; --bar: #3987e5; --bar-soft: #1d3656;
+  --map-sea: #0f151a; --map-land: #18212a; --map-border: #36444f; --map-null: #3b4651; --map-dim: #2d3741;
+  --r0: #1d3656; --r1: #1c5cab; --r2: #2a78d6; --r3: #3987e5; --r4: #6da7ec; --r5: #9ec5f4; --r6: #cde2fb;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-b); font-size: 15px; line-height: 1.45;
+  padding-inline: 16px; padding-block: 14px 40px;
+}
+h1, h2, h3 { font-family: var(--font-d); font-stretch: 82%; margin: 0; text-wrap: balance; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus, var(--accent)); outline-offset: 2px; }
+.mono { font-family: var(--font-m); font-size: 0.92em; }
+.muted { color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; max-width: 1640px; margin: 0 auto 10px; }
+.top h1 { font-size: clamp(26px, 3.2vw, 36px); font-weight: 750; letter-spacing: -0.01em; line-height: 1.05; }
+.top p { margin: 4px 0 0; color: var(--ink-2); max-width: 70ch; }
+.top a { color: var(--accent); font-weight: 600; text-decoration: none; border-bottom: 1px solid currentColor; }
+.note { max-width: 1640px; margin: 0 auto 12px; font-size: 13px; color: var(--muted); }
+
+/* main desk */
+.desk {
+  max-width: 1640px; margin: 0 auto;
+  display: grid; grid-template-columns: 272px minmax(0, 1fr) 372px;
+  grid-template-rows: clamp(540px, 80vh, 900px); gap: 12px;
+}
+.rail, .dossier { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; }
+.rail { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field > label, .lbl { font-family: var(--font-d); font-stretch: 85%; font-weight: 650; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+select, input[type="search"] {
+  width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2);
+}
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface-2); padding: 7px 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
+.search { position: relative; }
+.results { position: absolute; z-index: 5; top: 100%; left: 0; right: 0; margin: 4px 0 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+.results button { width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+.results button:hover, .results button:focus-visible { background: var(--surface-2); }
+.results .mono { color: var(--muted); }
+
+.legend { border-top: 1px solid var(--line-2); padding-top: 12px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.legend h3 { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.legend .lrow { display: grid; grid-template-columns: 14px 1fr; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.legend .sw { width: 12px; height: 12px; border-radius: 50%; }
+.legend .ring { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--hor); }
+.legend .sq { width: 11px; height: 11px; background: var(--hor); }
+.legend .lnote { color: var(--muted); margin-top: 4px; }
+
+/* map */
+.mapwrap { position: relative; background: var(--map-sea); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; min-height: 0; }
+#map { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+#map:active { cursor: grabbing; }
+.map-zone { position: absolute; left: 12px; top: 10px; font-family: var(--font-d); font-stretch: 85%; font-weight: 700; font-size: 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 4px 9px; pointer-events: none; }
+.zoom { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.zoom button { min-width: 34px; height: 32px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); cursor: pointer; font-weight: 700; font-size: 16px; }
+.zoom button.txt { font-size: 12px; font-weight: 600; padding-inline: 6px; }
+.map-hint { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; pointer-events: none; }
+.tip { position: absolute; z-index: 6; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 7px 10px; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,0.14); max-width: 260px; }
+.tip b { font-family: var(--font-d); font-stretch: 88%; font-size: 15px; }
+.tip .tv { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+/* dossier */
+.dossier { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { margin: 0; font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
+.d-head h2 { font-size: 28px; font-weight: 750; line-height: 1.08; margin: 2px 0 4px; }
+.d-sub { margin: 0; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.chip { display: inline-flex; align-items: center; gap: 7px; margin: 8px 0 0; padding: 3px 9px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--surface-2); border: 1px solid var(--line); }
+.chip.hor::before { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--hor); }
+.chip.mayor::before { content: ""; width: 9px; height: 9px; background: var(--hor); }
+.d-sec h3 { font-size: 14px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 8px; }
+.d-sec .cap { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.prow { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(60px, 1fr) auto; gap: 10px; align-items: center; padding: 3px 0; font-size: 14px; }
+.prow .pl { color: var(--ink-2); }
+.prow .pv { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; min-width: 72px; }
+.pt { position: relative; height: 12px; }
+.pt::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 2px; background: var(--line); border-radius: 1px; }
+.pt .med { position: absolute; left: 50%; top: 1px; width: 1px; height: 10px; background: var(--muted); }
+.pt b { position: absolute; top: 1px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--bar); box-shadow: 0 0 0 2px var(--surface); }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.tile { background: var(--surface-2); border: 1px solid var(--line-2); border-radius: 5px; padding: 7px 9px; display: flex; flex-direction: column; }
+.tile .tl { font-family: var(--font-d); font-stretch: 88%; font-weight: 650; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.tile .tv { font-family: var(--font-d); font-stretch: 88%; font-weight: 750; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.demo-wrap { overflow-x: auto; }
+.stand { margin: 0 0 10px; font-size: 13.5px; color: var(--ink-2); }
+.stand b { font-weight: 600; color: var(--ink); }
+table.demo { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.demo th[scope="col"] { font-family: var(--font-d); font-stretch: 88%; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 650; text-align: right; padding: 0 4px 4px; border-bottom: 1px solid var(--line); }
+table.demo th[scope="col"]:first-child { text-align: left; }
+table.demo th[scope="row"] { text-align: left; font-weight: 400; color: var(--ink-2); padding: 3px 3px 3px 0; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
+table.demo td { text-align: right; padding: 3px 3px; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--line-2); white-space: nowrap; }
+table.demo td.v { font-weight: 700; }
+table.demo .dep { color: var(--muted); }
+table.demo .g { width: 48px; padding-right: 0; }
+.gap { position: relative; display: block; height: 10px; width: 46px; }
+.gap i { position: absolute; left: 50%; top: 0; width: 1px; height: 10px; background: var(--line); }
+.gap b { position: absolute; top: 2px; height: 6px; background: var(--bar); border-radius: 2px; min-width: 2px; }
+.hist-leg { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
+.hist-leg span { display: inline-flex; align-items: center; gap: 6px; }
+.hist-leg i { width: 16px; height: 0; border-top: 2px solid var(--bar); }
+.hist-leg i.nat { border-top: 2px dashed var(--muted); }
+.hist { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.hist figure { margin: 0; }
+.hist figcaption { font-size: 12px; color: var(--ink-2); margin-bottom: 2px; }
+.mini { width: 100%; height: auto; display: block; overflow: visible; }
+.mini .grid { stroke: var(--line-2); stroke-width: 1; }
+.mini .base { stroke: var(--line); stroke-width: 1; }
+.mini text { fill: var(--muted); font-size: 10px; font-family: var(--font-b); font-variant-numeric: tabular-nums; }
+.mini text.lab { fill: var(--ink); font-weight: 700; font-size: 11px; }
+.mini .ln { fill: none; stroke: var(--bar); stroke-width: 2; }
+.mini .nat { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.mini .dot { fill: var(--bar); stroke: var(--surface); stroke-width: 2; }
+.bvt { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bvt th { text-align: right; font-weight: 600; color: var(--muted); font-size: 12px; padding: 4px 6px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+.bvt th:first-child, .bvt td:first-child { text-align: left; }
+.bvt td { text-align: right; padding: 3px 6px; border-bottom: 1px solid var(--line-2); font-variant-numeric: tabular-nums; }
+.bvt tr.flag td { color: var(--muted); }
+.bvwrap { max-height: 260px; overflow: auto; }
+.empty { color: var(--muted); }
+
+/* lower panels */
+.lower { max-width: 1640px; margin: 12px auto 0; display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 10px; }
+.panel-head h2 { font-size: 22px; font-weight: 750; }
+.panel-head p { margin: 0; color: var(--ink-2); font-size: 14px; flex: 1 1 260px; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 5px; padding: 6px 12px; font-weight: 600; cursor: pointer; }
+.btn:hover { filter: brightness(1.08); }
+.table-wrap { overflow-x: auto; max-height: 520px; overflow-y: auto; border: 1px solid var(--line-2); border-radius: 5px; }
+.rank { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rank th { position: sticky; top: 0; background: var(--surface-2); text-align: right; font-family: var(--font-d); font-stretch: 88%; font-weight: 650; font-size: 13px; color: var(--ink-2); padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.rank th button { border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+.rank th[aria-sort] button { color: var(--ink); }
+.rank th .arr { font-size: 10px; margin-left: 3px; }
+.rank th.l, .rank td.l { text-align: left; }
+.rank td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank tbody tr { cursor: pointer; }
+.rank tbody tr:hover { background: var(--surface-2); }
+.rank tbody tr.sel { background: var(--accent-soft); }
+.rank td.name { font-weight: 600; white-space: normal; min-width: 150px; }
+.rank .horm { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--hor); margin-left: 6px; vertical-align: 0; }
+.rank .horm.sqm { border-radius: 0; background: var(--hor); }
+.foot { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+#prof svg { width: 100%; height: auto; display: block; }
+#prof text { font-family: var(--font-b); font-size: 13px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+#prof text.v { fill: var(--ink); font-weight: 700; }
+#prof text.sub { fill: var(--muted); font-size: 12px; }
+#prof text.tick { fill: var(--muted); font-size: 11px; }
+#prof .axis { stroke: var(--muted); stroke-width: 1; }
+#prof .gl { stroke: var(--line-2); stroke-width: 1; }
+#prof .bar { fill: var(--bar); }
+#prof .track { fill: var(--surface-2); }
+
+.method { max-width: 1640px; margin: 12px auto 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.method h2 { font-size: 22px; font-weight: 750; margin-bottom: 6px; }
+.method .cols { columns: 2 380px; column-gap: 32px; }
+.method p { margin: 0 0 10px; max-width: 68ch; color: var(--ink-2); break-inside: avoid; }
+.method p strong { color: var(--ink); }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: 8px 14px; border-radius: 6px; font-size: 14px; z-index: 20; }
+
+@media (max-width: 1180px) {
+  .desk { grid-template-columns: 250px minmax(0, 1fr); grid-template-rows: clamp(480px, 72vh, 780px) auto; }
+  .dossier { grid-column: 1 / -1; overflow: visible; }
+  .lower { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .desk { grid-template-columns: 1fr; grid-template-rows: auto clamp(380px, 62vh, 620px) auto; }
+  .rail { overflow: visible; }
+  .d-head h2 { font-size: 24px; }
+  .hist { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="top">
+  <div>
+    <h1>Ciblage terrain 2027 <span style="font-weight:400;opacity:.6">v4</span></h1>
+    <p>Où envoyer les équipes de porte-à-porte : chaque commune et chaque bureau de vote classés par priorité, avec les maires Horizons, l'historique électoral 2007-2026 et la démographie INSEE.</p>
+  </div>
+  <a href="#methode">Méthode et sources</a>
+</header>
+<p class="note">Document de travail du groupe, non officiel. Données électorales et INSEE publiques, aucune donnée personnelle d'électeur.</p>
+
+<main class="desk">
+  <aside class="rail" aria-label="Réglages de la carte">
+    <div class="field">
+      <label for="metric">Indicateur</label>
+      <select id="metric"></select>
+      <p class="hint" id="metric-desc"></p>
+    </div>
+    <div class="field">
+      <span class="lbl" id="lvl-lbl">Échelle</span>
+      <div class="seg" role="group" aria-labelledby="lvl-lbl">
+        <button type="button" id="lvl-com" aria-pressed="true">Communes</button>
+        <button type="button" id="lvl-bv" aria-pressed="false">Bureaux de vote</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="zone">Zone</label>
+      <select id="zone"></select>
+    </div>
+    <div class="field search">
+      <label for="q">Rechercher une commune</label>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Laval, Le Havre, 53130…">
+      <ul class="results" id="q-results" hidden></ul>
+    </div>
+    <div class="field">
+      <label for="minins">Taille minimale du classement</label>
+      <select id="minins">
+        <option value="0">Toutes tailles</option>
+        <option value="500" selected>500 inscrits et plus</option>
+        <option value="2000">2 000 inscrits et plus</option>
+        <option value="10000">10 000 inscrits et plus</option>
+        <option value="50000">50 000 inscrits et plus</option>
+      </select>
+    </div>
+    <label class="check"><input type="checkbox" id="hor-only"> Seulement les communes Horizons (maire ou candidat en 2024)</label>
+    <label class="check"><input type="checkbox" id="hor-ring" checked> Montrer les maires et candidats Horizons</label>
+    <div class="legend" id="legend" aria-live="polite"></div>
+  </aside>
+
+  <section class="mapwrap" id="mapwrap">
+    <canvas id="map" role="img" aria-label="Carte de France métropolitaine, communes ou bureaux de vote colorés selon l'indicateur choisi. Le classement sous la carte donne les mêmes données sous forme de tableau."></canvas>
+    <div class="map-zone" id="map-zone"></div>
+    <div class="zoom">
+      <button type="button" id="zin" aria-label="Zoomer">+</button>
+      <button type="button" id="zout" aria-label="Dézoomer">&minus;</button>
+      <button type="button" class="txt" id="zreset">Zone</button>
+    </div>
+    <p class="map-hint" id="map-hint">Molette ou pincement pour zoomer, clic pour ouvrir une commune</p>
+    <div class="tip" id="tip" hidden></div>
+  </section>
+
+  <aside class="dossier" id="dossier" aria-live="polite"></aside>
+</main>
+
+<section class="lower">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Classement</h2>
+      <p id="rank-ctx"></p>
+      <button type="button" class="btn" id="export" hidden>Exporter en CSV</button>
+    </div>
+    <div class="table-wrap"><table class="rank" id="rank"></table></div>
+    <p class="foot" id="rank-foot"></p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Profil des zones prioritaires</h2>
+      <p id="prof-ctx"></p>
+    </div>
+    <div id="prof"></div>
+    <p class="foot">Moyennes pondérées par la population. Échelle logarithmique : une barre deux fois plus longue correspond à un écart deux fois plus grand, à la hausse comme à la baisse.</p>
+  </div>
+</section>
+
+<section class="method" id="methode">
+  <h2>Méthode et sources</h2>
+  <div class="cols">
+    <p><strong>Priorité finale v4 (recommandée).</strong> En 2012, l'effet du porte-à-porte est venu de la persuasion de votants, pas de la mobilisation d'abstentionnistes (Pons, AER 2018). Le score vise donc des électeurs à convaincre : d'une part ceux que le centre et LR ont perdus au profit du RN depuis 2012 (le plus petit du recul du centre et de LR et de la progression du RN, présidentielles 2012 → 2022, en voix par inscrit ; mesure par bureau, pas par électeur), d'autre part les électeurs « voisins » du centre (LR et gauche modérée, présidentielle 2022). Formule : 50 % rang reconquête + 50 % rang voisins. Aux législatives 2024, ces électeurs perdus n'étaient pas encore revenus : le pilote (Hauts-de-Seine, Seine-Maritime) teste si une visite les fait revenir. Les quatre objectifs sont consultables séparément. Scripts : <span class="mono">research/data/v4/</span>.</p>
+    <p><strong>Priorité v3.</strong> Variable de Vincent Pons (American Economic Review, 2018), qui a servi à cibler le porte-à-porte de 2012 : part des abstentionnistes multipliée par la part du camp visé parmi les exprimés, bureau par bureau. La version recommandée la calcule sur le premier tour de 2022 avec Macron et Pécresse, pour viser l'électorat du centre et de la droite modérée qu'Édouard Philippe peut convaincre. La version « règle de Pons » reprend le second tour de 2022 avec Macron ; comme ce second tour l'opposait à Marine Le Pen, les bureaux qu'elle retient votaient à 50 % pour la gauche au premier tour. Les deux classements ne retiennent que 27 % de bureaux en commun.</p>
+    <p><strong>Bascules 2012-2022.</strong> Écart moyen entre l'évolution locale du vote centre + droite de gouvernement et l'évolution nationale, entre 2012, 2017 et 2022. Un bureau qui a suivi le pays obtient zéro ; un chiffre élevé signale un électorat qui change d'avis.</p>
+    <p><strong>Maires et candidats Horizons.</strong> Les carrés orange sont les 208 maires Horizons identifiés au 6 octobre 2026 : pages du parti, pages Wikipédia des municipales 2026 par département et Répertoire national des élus d'août 2026 (140 confirmés par deux sources). Le parti en revendique davantage. Les cercles orange sont les communes où un candidat portait la nuance officielle HOR au premier tour des législatives 2024 (16 candidats seulement, la plupart des candidats Horizons étant enregistrés sous l'étiquette Ensemble).</p>
+    <p><strong>Municipales 2026.</strong> Abstention du premier tour dans les 34 660 communes de métropole, et du second tour dans les 1 526 communes concernées, calculée bureau par bureau. Le bloc central regroupe les nuances Horizons, Renaissance, MoDem, UDI, union du centre et divers centre ; il n'est disponible que là où le ministère attribue une nuance, c'est-à-dire dans les communes de 3 500 habitants et plus, soit 66 % des inscrits. Sept listes portent la nuance Horizons (LHOR) : Aix-en-Provence, Tours, Noisy-le-Sec, Sotteville-lès-Rouen, Noisiel, Roche-la-Molière et Neufchâtel-Hardelot. Le résultat municipal dépend surtout des personnes et des alliances locales : il dit où le centre tient une ville, pas ce que vaudrait un candidat national au même endroit.</p>
+    <p><strong>Démographie.</strong> Recensement 2021 (dossier complet INSEE, édition 2024) et revenu disponible médian Filosofi 2021, au niveau de la commune. À l'échelle des bureaux de vote, chaque bureau reçoit la valeur de sa commune.</p>
+    <p><strong>Historique.</strong> Premier tour des présidentielles 2007 à 2022 ; centre + droite de gouvernement = Bayrou + Sarkozy (2007, 2012), Macron + Fillon (2017), Macron + Pécresse (2022). Un bureau ancien n'est rattaché que si son code et sa taille correspondent à 2022 ; sinon la valeur de la commune est utilisée.</p>
+    <p><strong>Lecture de la carte.</strong> Sept classes de même effectif, calculées sur toute la métropole pour que les couleurs restent comparables d'un département à l'autre. Les bureaux de moins de 50 inscrits ou à participation inférieure à 20 % sont exclus des moyennes et grisés. 97,7 % des bureaux de métropole sont géolocalisés (Caen, Avignon et Dunkerque ne le sont pas) ; une commune sans bureau géolocalisé est placée au centre de son territoire. France métropolitaine uniquement.</p>
+    <p><strong>Sources.</strong> Ministère de l'Intérieur via data.gouv.fr (présidentielles 2007 à 2022 par bureau de vote, législatives 2024 par commune), INSEE (recensement 2021, Filosofi 2021). Scripts : <span class="mono">research/data/build_history.py</span> et <span class="mono">build_app_data.py</span>.</p>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="data/meta.js"></script>
+<script src="data/departements.js"></script>
+<script src="data/communes.js"></script>
+<script src="data/bureaux.js"></script>
+<script src="data/elus.js"></script>
+<script>
+(function () {
+  "use strict";
+  var C = window.COMMUNES, B = window.BUREAUX, META = window.META, DEPTS = window.DEPTS;
+  var TAU = Math.PI * 2;
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- formatting ----------
+  var nf0 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+  var nf1 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  var nf3 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  var F = {
+    idx: function (v) { return nf3.format(v / 1000); },
+    pct: function (v) { return nf1.format(v / 10) + " %"; },
+    pts: function (v) { return nf1.format(v / 10) + " pts"; },
+    eur: function (v) { return nf0.format(v) + " €"; },
+    dens: function (v) { return nf0.format(v) + " hab./km²"; },
+    spct: function (v) { return (v > 0 ? "+" : "") + nf1.format(v / 10) + " %"; },
+    int: function (v) { return nf0.format(v); },
+    rk: function (v) { return Math.round(v / 10) + " / 100"; }
+  };
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  // ---------- indicators ----------
+  var METRICS = {
+    fin: { g: "Priorité porte-à-porte", label: "Priorité finale v4", short: "Priorité v4", fmt: F.rk, bv: true, desc: "Recommandé. Moitié reconquête (voix perdues par le centre et LR là où le RN progresse, présidentielles 2012 → 2022), moitié « voisins » (électeurs LR et gauche modérée, présidentielle 2022), en rang sur 100 parmi les inscrits de métropole. À tester au pilote." },
+    vois: { g: "Priorité porte-à-porte", label: "Voisins : LR et gauche modérée", short: "Voisins", fmt: F.rk, bv: true, desc: "Votants Pécresse, Hidalgo et Jadot par inscrit, 1er tour 2022, en rang sur 100." },
+    oa: { g: "Priorité porte-à-porte", label: "Abstentionnistes centre-droit", short: "Abstentionnistes", fmt: F.rk, bv: true, desc: "Abstention × centre + droite, composite 50 % présidentielle 2022, 30 % européennes 2024, 20 % présidentielle 2017, en rang sur 100." },
+    ob: { g: "Priorité porte-à-porte", label: "Électeurs RN à reconquérir", short: "RN à reconquérir", fmt: F.rk, bv: true, desc: "Borne haute des passages du centre vers le RN entre la présidentielle 2022 et les européennes 2024, en rang sur 100. Attention : aucune mesure de ce type n'a prédit les gains du centre par le passé." },
+    oc: { g: "Priorité porte-à-porte", label: "Électeurs de gauche modérée", short: "Gauche modérée", fmt: F.rk, bv: true, desc: "Vote Glucksmann et écologistes aux européennes 2024 × participation 2022, en rang sur 100." },
+    po1: { g: "Priorité porte-à-porte", label: "Priorité centre et droite (v3)", short: "Priorité v3", fmt: F.idx, bv: true, desc: "Recommandé. Part des abstentionnistes × part de Macron et Pécresse parmi les votants, 1er tour 2022. Vise l'électorat du centre et de la droite modérée, celui qu'Édouard Philippe peut convaincre. Indice de 0 à 1." },
+    po2: { g: "Priorité porte-à-porte", label: "Priorité règle de Pons", short: "Priorité Pons", fmt: F.idx, bv: true, desc: "Part des abstentionnistes × part de Macron au 2d tour 2022, la variable exacte de Pons. Comme ce 2d tour l'opposait à Marine Le Pen, elle retient surtout des quartiers qui votent à gauche au 1er tour." },
+    abs1: { g: "Potentiel électoral", label: "Abstention 1er tour 2022", short: "Abstention T1", fmt: F.pct, bv: true, desc: "Part des inscrits qui n'ont pas voté au 1er tour de la présidentielle 2022." },
+    cdg: { g: "Potentiel électoral", label: "Centre + droite 2022", short: "Centre + droite", fmt: F.pct, bv: true, desc: "Macron + Pécresse, part des exprimés au 1er tour 2022." },
+    sw: { g: "Potentiel électoral", label: "Bascules 2012-2022 (volatilité)", short: "Bascules", fmt: F.pts, bv: true, desc: "Écart moyen entre l'évolution locale du vote centre + droite et l'évolution nationale." },
+    am1: { g: "Municipales 2026", label: "Abstention municipale 2026", short: "Abstention muni.", fmt: F.pct, desc: "Part des inscrits qui n'ont pas voté au 1er tour des municipales de mars 2026." },
+    cm1: { g: "Municipales 2026", label: "Bloc central 2026", short: "Bloc central 2026", fmt: F.pct, desc: "Listes de nuance Horizons, Renaissance, MoDem, UDI, union du centre ou divers centre, 1er tour 2026. Nuance attribuée seulement dans les communes de 3 500 habitants et plus." },
+    am2: { label: "Abstention municipale, 2d tour", fmt: F.pct, desc: "" },
+    cm2: { label: "Bloc central, 2d tour", fmt: F.pct, desc: "" },
+    hm1: { label: "Liste Horizons 2026", fmt: F.pct, desc: "" },
+    hor: { g: "Horizons", label: "Score Horizons 2024", short: "Horizons 2024", fmt: F.pct, desc: "Candidat de nuance HOR, part des exprimés au 1er tour des législatives 2024 (16 candidats)." },
+    inc: { g: "Démographie", label: "Revenu médian", fmt: F.eur, desc: "Revenu disponible médian par unité de consommation, Filosofi 2021." },
+    unemp: { g: "Démographie", label: "Chômage", fmt: F.pct, desc: "Taux de chômage des 15-64 ans, recensement 2021." },
+    cadres: { g: "Démographie", label: "Cadres", fmt: F.pct, desc: "Cadres et professions intellectuelles supérieures, part des 15 ans et plus." },
+    ouvriers: { g: "Démographie", label: "Ouvriers", fmt: F.pct, desc: "Part des 15 ans et plus." },
+    retraites: { g: "Démographie", label: "Retraités", fmt: F.pct, desc: "Part des 15 ans et plus." },
+    age60: { g: "Démographie", label: "60 ans et plus", fmt: F.pct, desc: "Part de la population." },
+    age1529: { g: "Démographie", label: "15-29 ans", fmt: F.pct, desc: "Part de la population." },
+    dipsup: { g: "Démographie", label: "Diplômés du supérieur", fmt: F.pct, desc: "Part des 15 ans et plus sortis du système scolaire." },
+    owner: { g: "Démographie", label: "Propriétaires", fmt: F.pct, desc: "Résidences principales occupées par leur propriétaire." },
+    hlm: { g: "Démographie", label: "Logement social", fmt: F.pct, desc: "Résidences principales louées en HLM." },
+    monop: { g: "Démographie", label: "Familles monoparentales", fmt: F.pct, desc: "Part des ménages." },
+    rsec: { g: "Démographie", label: "Résidences secondaires", fmt: F.pct, desc: "Part des logements." },
+    dens: { g: "Démographie", label: "Densité", fmt: F.dens, desc: "Habitants par km², recensement 2021." },
+    growth: { g: "Démographie", label: "Évolution de la population", fmt: F.spct, desc: "Variation de la population entre 2015 et 2021." }
+  };
+  var ELEC = ["fin", "vois", "oa", "ob", "oc", "po1", "abs1", "cdg"];
+  var MAIRES = (window.ELUS && window.ELUS.maires) || [], mayorByCode = {};
+  MAIRES.forEach(function (m) { mayorByCode[m.code] = m; });
+  var DEMO_ROWS = ["inc", "unemp", "cadres", "ouvriers", "retraites", "age60", "age1529", "dipsup", "owner", "hlm", "monop", "dens", "growth"];
+  var PROFILE = ["inc", "unemp", "cadres", "ouvriers", "retraites", "age60", "age1529", "dipsup", "owner", "hlm", "monop", "rsec"];
+
+  // ---------- derived indexes ----------
+  var metroC = [], metroB = [];
+  for (var i = 0; i < C.n; i++) if (C.dep[i].charAt(0) !== "Z" && C.lon[i] != null) metroC.push(i);
+  var bStart = new Int32Array(C.n).fill(-1), bEnd = new Int32Array(C.n).fill(-1);
+  for (var j = 0; j < B.n; j++) {
+    var ci = B.com[j];
+    if (bStart[ci] < 0) bStart[ci] = j;
+    bEnd[ci] = j + 1;
+    if (C.dep[ci].charAt(0) !== "Z") metroB.push(j);
+  }
+  var codeIndex = {};
+  for (i = 0; i < C.n; i++) codeIndex[C.code[i]] = i;
+  var bvMetric = function (key, jj) { return B[key] ? B[key][jj] : C[key][B.com[jj]]; };
+
+  // national references, weighted by registered voters
+  function wAvg(key) {
+    var s = 0, w = 0;
+    for (var k = 0; k < metroC.length; k++) { var ii = metroC[k], v = C[key][ii]; if (v != null) { s += v * C.ins[ii]; w += C.ins[ii]; } }
+    return w ? s / w : null;
+  }
+  var NAT = { cdg: ["cdg07", "cdg12", "cdg17", "cdg"].map(wAvg), ab: ["ab07", "ab12", "ab17", "abs1"].map(wAvg) };
+
+  var pctCache = {};
+  function pctRank(key, v) {
+    var c = pctCache[key];
+    if (!c) {
+      var arr = [];
+      for (var k = 0; k < metroC.length; k++) { var ii = metroC[k], x = C[key][ii]; if (x != null) arr.push([x, C.ins[ii]]); }
+      arr.sort(function (a, b) { return a[0] - b[0]; });
+      var vals = new Float64Array(arr.length), cum = new Float64Array(arr.length), s = 0;
+      for (k = 0; k < arr.length; k++) { vals[k] = arr[k][0]; s += arr[k][1]; cum[k] = s; }
+      c = pctCache[key] = { vals: vals, cum: cum, tot: s };
+    }
+    var lo = 0, hi = c.vals.length;
+    while (lo < hi) { var m = (lo + hi) >> 1; if (c.vals[m] <= v) lo = m + 1; else hi = m; }
+    return lo ? c.cum[lo - 1] / c.tot : 0;
+  }
+
+  var breakCache = {};
+  function breaks(key, level) {
+    var id = key + "|" + level;
+    if (breakCache[id]) return breakCache[id];
+    var vals = [];
+    if (level === "bv" && B[key]) { for (var k = 0; k < metroB.length; k++) { var jj = metroB[k]; if (!B.flag[jj] && B[key][jj] != null) vals.push(B[key][jj]); } }
+    else { for (k = 0; k < metroC.length; k++) { var v = C[key][metroC[k]]; if (v != null) vals.push(v); } }
+    vals.sort(function (a, b) { return a - b; });
+    var br = [];
+    for (k = 1; k < 7; k++) br.push(vals[Math.min(vals.length - 1, Math.floor(vals.length * k / 7))]);
+    return (breakCache[id] = { br: br, min: vals[0], max: vals[vals.length - 1] });
+  }
+  function classOf(v, br) { var k = 0; while (k < 6 && v >= br[k]) k++; return k; }
+
+  // ---------- state ----------
+  var S = { metric: "fin", level: "com", zone: "FR", minIns: 500, horOnly: false, horRing: true, sel: codeIndex["76351"], sortKey: null, sortDir: -1 };
+  try {
+    var saved = JSON.parse(localStorage.getItem("ciblage2027") || "{}");
+    if (saved.metric && METRICS[saved.metric]) S.metric = saved.metric;
+    if (saved.level === "bv" || saved.level === "com") S.level = saved.level;
+    if (saved.zone && (saved.zone === "FR" || META.depNames[saved.zone])) S.zone = saved.zone;
+  } catch (e) { /* per-viewer convenience only */ }
+  function remember() { try { localStorage.setItem("ciblage2027", JSON.stringify({ metric: S.metric, level: S.level, zone: S.zone })); } catch (e) { } }
+
+  function zoneOk(ii) { return S.zone === "FR" || C.dep[ii] === S.zone; }
+  // the size filter applies to the ranking and the profile; the map only dims by zone and Horizons filter
+  function isHz(ii) { return C.hor[ii] != null || !!mayorByCode[C.code[ii]]; }
+  function comMapOk(ii) { return zoneOk(ii) && (!S.horOnly || isHz(ii)); }
+  function bvMapOk(jj) { return comMapOk(B.com[jj]); }
+  function comOk(ii) { return comMapOk(ii) && C.ins[ii] >= S.minIns; }
+  function bvOk(jj) { return bvMapOk(jj) && B.ins[jj] >= S.minIns; }
+
+  // ---------- controls ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var metricSel = $("metric"), zoneSel = $("zone");
+  (function buildMetricSelect() {
+    var groups = {};
+    Object.keys(METRICS).forEach(function (k) { if (METRICS[k].g) (groups[METRICS[k].g] = groups[METRICS[k].g] || []).push(k); });
+    Object.keys(groups).forEach(function (g) {
+      var og = document.createElement("optgroup"); og.label = g;
+      groups[g].forEach(function (k) { var o = document.createElement("option"); o.value = k; o.textContent = METRICS[k].label; og.appendChild(o); });
+      metricSel.appendChild(og);
+    });
+  })();
+  (function buildZoneSelect() {
+    var o = document.createElement("option"); o.value = "FR"; o.textContent = "France métropolitaine"; zoneSel.appendChild(o);
+    Object.keys(META.depNames).filter(function (d) { return d.charAt(0) !== "Z"; }).sort().forEach(function (d) {
+      var op = document.createElement("option"); op.value = d; op.textContent = d + " " + META.depNames[d]; zoneSel.appendChild(op);
+    });
+  })();
+
+  // ---------- map ----------
+  var canvas = $("map"), ctx = canvas.getContext("2d"), wrap = $("mapwrap");
+  var W = 600, H = 600, dpr = 1, T = d3.zoomIdentity;
+  var proj = d3.geoConicConformal().parallels([44, 49]).rotate([-3, 0]);
+  var cx = new Float32Array(C.n).fill(NaN), cy = new Float32Array(C.n).fill(NaN);
+  var bx = new Float32Array(B.n).fill(NaN), by = new Float32Array(B.n).fill(NaN);
+  var deptPaths = [], deptByCode = {}, qC = null, qB = null;
+  var comR0 = new Float32Array(C.n);
+  for (i = 0; i < C.n; i++) comR0[i] = Math.max(0.9, Math.min(11, Math.sqrt(C.ins[i]) / 40));
+  var comOrder = metroC.slice().sort(function (a, b) { return comR0[b] - comR0[a]; });
+
+  function fit() {
+    proj.fitExtent([[14, 14], [W - 14, H - 14]], DEPTS);
+    var path = d3.geoPath(proj);
+    deptPaths = DEPTS.features.map(function (f) {
+      var p = { code: f.properties.code, path: new Path2D(path(f)), bounds: path.bounds(f) };
+      deptByCode[p.code] = p; return p;
+    });
+    for (var k = 0; k < metroC.length; k++) { var ii = metroC[k], p = proj([C.lon[ii] / 1e4, C.lat[ii] / 1e4]); cx[ii] = p[0]; cy[ii] = p[1]; }
+    var ptsB = [];
+    for (k = 0; k < metroB.length; k++) {
+      var jj = metroB[k];
+      if (B.lon[jj] == null) continue;
+      var q = proj([B.lon[jj] / 1e4, B.lat[jj] / 1e4]); bx[jj] = q[0]; by[jj] = q[1]; ptsB.push(jj);
+    }
+    qC = d3.quadtree().x(function (ii) { return cx[ii]; }).y(function (ii) { return cy[ii]; }).addAll(metroC);
+    qB = d3.quadtree().x(function (jj) { return bx[jj]; }).y(function (jj) { return by[jj]; }).addAll(ptsB);
+  }
+
+  var TK = null;
+  function tokens() {
+    if (TK) return TK;
+    var cs = getComputedStyle(document.documentElement), g = function (n) { return cs.getPropertyValue(n).trim(); };
+    TK = { sea: g("--map-sea"), land: g("--map-land"), border: g("--map-border"), nul: g("--map-null"), dim: g("--map-dim"),
+      ink: g("--ink"), surface: g("--surface"), hor: g("--hor"), ramp: [0, 1, 2, 3, 4, 5, 6].map(function (k) { return g("--r" + k); }) };
+    return TK;
+  }
+  function comR(ii) { return Math.min(26, comR0[ii] * Math.pow(T.k, 0.55)); }
+  function bvR() { return Math.min(7, 1.3 * Math.pow(T.k, 0.6)); }
+
+  var pending = false;
+  function schedule() { if (!pending) { pending = true; requestAnimationFrame(function () { pending = false; draw(); }); } }
+
+  function fillCircles(list, color, alpha) {
+    if (!list.length) return;
+    ctx.beginPath();
+    for (var k = 0; k < list.length; k += 3) { ctx.moveTo(list[k] + list[k + 2], list[k + 1]); ctx.arc(list[k], list[k + 1], list[k + 2], 0, TAU); }
+    ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.fill(); ctx.globalAlpha = 1;
+  }
+  function ringCircles(list, color, width, pad) {
+    if (!list.length) return;
+    ctx.beginPath();
+    for (var k = 0; k < list.length; k += 3) { var r = list[k + 2] + pad; ctx.moveTo(list[k] + r, list[k + 1]); ctx.arc(list[k], list[k + 1], r, 0, TAU); }
+    ctx.lineWidth = width; ctx.strokeStyle = color; ctx.stroke();
+  }
+
+  function draw() {
+    var tk = tokens();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = tk.sea; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.translate(T.x, T.y); ctx.scale(T.k, T.k);
+    ctx.fillStyle = tk.land;
+    deptPaths.forEach(function (p) { ctx.fill(p.path); });
+    ctx.lineWidth = 0.8 / T.k; ctx.strokeStyle = tk.border;
+    deptPaths.forEach(function (p) { ctx.stroke(p.path); });
+    if (S.zone !== "FR" && deptByCode[S.zone]) { ctx.lineWidth = 2 / T.k; ctx.strokeStyle = tk.ink; ctx.stroke(deptByCode[S.zone].path); }
+    ctx.restore();
+
+    var key = S.metric, br = breaks(key, S.level).br;
+    var hor = [], sel = [];
+    if (S.level === "com") {
+      // three size tiers, big first, so small communes stay visible on top
+      var tiers = [0, 1, 2].map(function () { return [[], [], [], [], [], [], [], [], []]; });
+      for (var k = 0; k < comOrder.length; k++) {
+        var ii = comOrder[k], r = comR(ii), sx = T.x + T.k * cx[ii], sy = T.y + T.k * cy[ii];
+        if (sx < -r || sx > W + r || sy < -r || sy > H + r) continue;
+        var v = C[key][ii], ok = comMapOk(ii);
+        var cls = !ok ? 8 : (v == null ? 7 : classOf(v, br));
+        tiers[r > 7 ? 0 : (r > 2.6 ? 1 : 2)][cls].push(sx, sy, r);
+        if (S.horRing && C.hor[ii] != null && ok) hor.push(sx, sy, r);
+        if (ii === S.sel) sel.push(sx, sy, r);
+      }
+      tiers.forEach(function (t, ti) {
+        fillCircles(t[8], tk.dim, 0.45);
+        fillCircles(t[7], tk.nul, 1);
+        for (var c = 0; c < 7; c++) fillCircles(t[c], tk.ramp[c], 1);
+        if (ti === 0) { var all = []; for (c = 0; c < 8; c++) all = all.concat(t[c]); ringCircles(all, tk.surface, 1, 0.5); }
+      });
+    } else {
+      var buckets = [[], [], [], [], [], [], [], [], []], rr = bvR();
+      for (k = 0; k < metroB.length; k++) {
+        var jj = metroB[k];
+        if (isNaN(bx[jj])) continue;
+        var bsx = T.x + T.k * bx[jj], bsy = T.y + T.k * by[jj];
+        if (bsx < -rr || bsx > W + rr || bsy < -rr || bsy > H + rr) continue;
+        var bv = bvMetric(key, jj), bok = bvMapOk(jj);
+        var bcls = !bok ? 8 : ((bv == null || (B[key] && B.flag[jj])) ? 7 : classOf(bv, br));
+        buckets[bcls].push(bsx, bsy, rr);
+        if (S.horRing && C.hor[B.com[jj]] != null && bok) hor.push(bsx, bsy, rr);
+        if (B.com[jj] === S.sel) sel.push(bsx, bsy, rr);
+      }
+      fillCircles(buckets[8], tk.dim, 0.45);
+      fillCircles(buckets[7], tk.nul, 1);
+      for (var c2 = 0; c2 < 7; c2++) fillCircles(buckets[c2], tk.ramp[c2], 1);
+    }
+    ctx.globalAlpha = T.k < 2.5 ? 0.75 : 1;
+    ringCircles(hor, tk.hor, T.k < 2.5 ? 0.9 : 1.6, T.k < 2.5 ? 0.6 : 1.8);
+    ctx.globalAlpha = 1;
+    if (S.horRing) {
+      var sz = Math.min(12, 5 + T.k * 0.35);
+      ctx.fillStyle = tk.hor; ctx.strokeStyle = tk.surface; ctx.lineWidth = 1.5;
+      MAIRES.forEach(function (m) {
+        var ii = codeIndex[m.code]; if (ii == null || isNaN(cx[ii]) || !zoneOk(ii)) return;
+        var mx = T.x + T.k * cx[ii], my = T.y + T.k * cy[ii];
+        if (mx < -sz || mx > W + sz || my < -sz || my > H + sz) return;
+        ctx.beginPath(); ctx.rect(mx - sz / 2, my - sz / 2, sz, sz); ctx.fill(); ctx.stroke();
+      });
+    }
+    ringCircles(sel, tk.surface, 4, 2.5);
+    ringCircles(sel, tk.ink, 2, 2.5);
+  }
+
+  // ---------- zoom ----------
+  var zoom = d3.zoom().scaleExtent([1, 90]).on("zoom", function (e) { T = e.transform; hideTip(); schedule(); });
+  var cSel = d3.select(canvas).call(zoom).on("dblclick.zoom", null);
+  function goTo(t, animate) {
+    if (animate && !reduced) cSel.transition().duration(650).call(zoom.transform, t);
+    else cSel.call(zoom.transform, t);
+  }
+  function boundsTransform(b) {
+    var k = Math.min(90, 0.88 / Math.max((b[1][0] - b[0][0]) / W, (b[1][1] - b[0][1]) / H));
+    return d3.zoomIdentity.translate(W / 2 - k * (b[0][0] + b[1][0]) / 2, H / 2 - k * (b[0][1] + b[1][1]) / 2).scale(k);
+  }
+  function zoneTransform() {
+    if (S.zone !== "FR" && deptByCode[S.zone]) return boundsTransform(deptByCode[S.zone].bounds);
+    return d3.zoomIdentity;
+  }
+  function focusCommune(ii) {
+    if (isNaN(cx[ii])) return;
+    var k = Math.max(T.k, 14);
+    goTo(d3.zoomIdentity.translate(W / 2 - k * cx[ii], H / 2 - k * cy[ii]).scale(k), true);
+  }
+  $("zin").addEventListener("click", function () { cSel.transition().duration(reduced ? 0 : 300).call(zoom.scaleBy, 1.8); });
+  $("zout").addEventListener("click", function () { cSel.transition().duration(reduced ? 0 : 300).call(zoom.scaleBy, 1 / 1.8); });
+  $("zreset").addEventListener("click", function () { goTo(zoneTransform(), true); });
+
+  function resize() {
+    var r = wrap.getBoundingClientRect();
+    W = Math.max(240, r.width); H = Math.max(240, r.height);
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    fit();
+    zoom.extent([[0, 0], [W, H]]).translateExtent([[-W * 0.4, -H * 0.4], [W * 1.4, H * 1.4]]);
+    goTo(zoneTransform(), false);
+    schedule();
+  }
+
+  // ---------- hover and click ----------
+  var tip = $("tip");
+  function hideTip() { tip.hidden = true; }
+  function hitTest(mx, my) {
+    var px = (mx - T.x) / T.k, py = (my - T.y) / T.k;
+    if (S.level === "com") {
+      var ii = qC.find(px, py, 30 / T.k);
+      if (ii != null && Math.hypot(T.x + T.k * cx[ii] - mx, T.y + T.k * cy[ii] - my) <= comR(ii) + 4) return { c: ii };
+      return null;
+    }
+    var jj = qB.find(px, py, (bvR() + 5) / T.k);
+    return jj != null ? { c: B.com[jj], b: jj } : null;
+  }
+  canvas.addEventListener("mousemove", function (e) {
+    var rect = canvas.getBoundingClientRect(), mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    var h = hitTest(mx, my);
+    if (!h) { hideTip(); canvas.style.cursor = ""; return; }
+    canvas.style.cursor = "pointer";
+    var m = METRICS[S.metric], ii = h.c;
+    var v = h.b != null ? bvMetric(S.metric, h.b) : C[S.metric][ii];
+    var head = "<b>" + esc(C.nom[ii]) + "</b> <span class=\"muted\">(" + C.dep[ii] + ")</span>";
+    if (h.b != null) head += "<br><span class=\"muted\">Bureau <span class=\"mono\">" + esc(B.bv[h.b]) + "</span> · " + F.int(B.ins[h.b]) + " inscrits</span>";
+    else head += "<br><span class=\"muted\">" + F.int(C.ins[ii]) + " inscrits</span>";
+    head += "<br><span class=\"muted\">" + (C.pop[ii] != null ? F.int(C.pop[ii]) + " habitants" : "population n.d.") +
+      (C.inc[ii] != null ? " · revenu médian " + F.eur(C.inc[ii]) : "") + "</span>";
+    var flagged = h.b != null && B[S.metric] && B.flag[h.b];
+    tip.innerHTML = head + "<br>" + esc(m.label) + " : <span class=\"tv\">" + (v == null ? "n.d." : m.fmt(v)) + "</span>" + (flagged ? "<br><span class=\"muted\">Participation trop faible, exclu</span>" : "");
+    tip.hidden = false;
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = Math.min(W - tw - 6, mx + 14) + "px";
+    tip.style.top = (my + th + 18 > H ? my - th - 12 : my + 14) + "px";
+  });
+  canvas.addEventListener("mouseleave", hideTip);
+  canvas.addEventListener("click", function (e) {
+    var rect = canvas.getBoundingClientRect(), h = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+    if (h) select(h.c, false);
+  });
+
+  // ---------- legend ----------
+  function renderLegend() {
+    var m = METRICS[S.metric], b = breaks(S.metric, S.level), br = b.br, tk = tokens();
+    var edges = [b.min].concat(br).concat([b.max]);
+    var html = "<h3>" + esc(m.label) + "</h3>";
+    for (var c = 6; c >= 0; c--) {
+      html += "<div class=\"lrow\"><span class=\"sw\" style=\"background:" + tk.ramp[c] + "\"></span><span>" + m.fmt(edges[c]) + " à " + m.fmt(edges[c + 1]) + "</span></div>";
+    }
+    html += "<div class=\"lrow\"><span class=\"sw\" style=\"background:" + tk.nul + "\"></span><span>Pas de donnée ou participation trop faible</span></div>";
+    if (S.horRing) html += "<div class=\"lrow\"><span class=\"sq\"></span><span>Maire Horizons (" + MAIRES.length + " identifiés)</span></div><div class=\"lrow\"><span class=\"ring\"></span><span>Candidature Horizons aux législatives 2024</span></div>";
+    html += "<p class=\"lnote\">" + (S.level === "com" ? "Taille des cercles : nombre d'inscrits. " : "") +
+      (S.level === "bv" && !m.bv ? "Valeur de la commune pour chaque bureau. " : "") + "Sept classes de même effectif, métropole entière.</p>";
+    $("legend").innerHTML = html;
+    $("metric-desc").textContent = m.desc;
+  }
+
+  // ---------- dossier ----------
+  function prow(key, v) {
+    var m = METRICS[key];
+    if (v == null) return "<div class=\"prow\"><span class=\"pl\">" + esc(m.label) + "</span><span class=\"pt\"></span><span class=\"pv muted\">n.d.</span></div>";
+    var p = pctRank(key, v);
+    return "<div class=\"prow\" title=\"" + esc(m.desc) + " Plus élevé que pour " + Math.round(p * 100) + " % des électeurs de métropole.\"><span class=\"pl\">" + esc(m.label) +
+      "</span><span class=\"pt\"><i class=\"med\"></i><b style=\"left:" + (p * 100).toFixed(1) + "%\"></b></span><span class=\"pv\">" + m.fmt(v) + "</span></div>";
+  }
+  var DEMO_TILES = [["pop", "Habitants"], ["inc", "Revenu médian"], ["age60", "60 ans et plus"], ["hlm", "Logement social"]];
+  var TLAB = { inc: ["Revenu médian"], unemp: ["Chômage"], cadres: ["Cadres"], ouvriers: ["Ouvriers"], retraites: ["Retraités"],
+    dipsup: ["Diplômés du sup."], age1529: ["15-29 ans"], age60: ["60 ans et plus"], owner: ["Propriétaires"],
+    hlm: ["Logement social"], monop: ["Monoparentales"], rsec: ["Rés. secondaires"], dens: ["Densité (hab/km²)", F.int] };
+  var DEMO_TABLE = Object.keys(TLAB);
+  var avgCache = {};
+  function demoAvg(scope) {
+    if (avgCache[scope]) return avgCache[scope];
+    var acc = {}, wsum = {};
+    DEMO_TABLE.forEach(function (k) { acc[k] = 0; wsum[k] = 0; });
+    for (var n = 0; n < metroC.length; n++) {
+      var ii = metroC[n];
+      if (scope !== "FR" && C.dep[ii] !== scope) continue;
+      var pop = C.pop[ii];
+      if (!pop) continue;
+      DEMO_TABLE.forEach(function (k) { var v = C[k][ii]; if (v != null) { acc[k] += v * pop; wsum[k] += pop; } });
+    }
+    var out = {};
+    DEMO_TABLE.forEach(function (k) { out[k] = wsum[k] ? acc[k] / wsum[k] : null; });
+    return (avgCache[scope] = out);
+  }
+  function tfmt(k, v) { return v == null ? "n.d." : (TLAB[k] && TLAB[k][1] ? TLAB[k][1](v) : METRICS[k].fmt(v)); }
+  function pctDiff(r) { var p = Math.round((r - 1) * 100); return (p > 0 ? "+" : "−") + Math.abs(p) + " %"; }
+  function ratioTxt(r) { return r >= 1.6 ? "×" + nf1.format(r) : pctDiff(r); }
+  function gapBar(r) {
+    var lg = Math.log(r) / Math.log(3);            // a bar reaching the end means three times the national value
+    lg = Math.max(-1, Math.min(1, lg));
+    var w = Math.abs(lg) * 50;
+    return "<span class=\"gap\" title=\"" + ratioTxt(r) + " par rapport à la métropole\"><i></i><b style=\"left:" +
+      (lg < 0 ? 50 - w : 50).toFixed(1) + "%;width:" + w.toFixed(1) + "%\"></b></span>";
+  }
+  function srow(label, value, note) {
+    return "<div class=\"prow\"><span class=\"pl\">" + esc(label) + "</span><span class=\"pt\"></span><span class=\"pv" +
+      (value == null ? " muted" : "") + "\">" + (value == null ? esc(note || "n.d.") : value) + "</span></div>";
+  }
+  function muniBlock(ii) {
+    if (C.am1[ii] == null && C.cm1[ii] == null) return "";
+    var h = "<div class=\"d-sec\"><h3>Municipales 2026</h3>" + prow("am1", C.am1[ii]);
+    if (C.am2[ii] != null) h += srow("Abstention, 2d tour", F.pct(C.am2[ii]));
+    if (C.cm1[ii] != null) {
+      h += prow("cm1", C.cm1[ii]);
+      if (C.cm2[ii] != null) h += srow("Bloc central, 2d tour", F.pct(C.cm2[ii]));
+    } else {
+      h += srow("Bloc central", null, "nuance non attribuée");
+    }
+    if (C.hm1[ii] != null) h += srow("Liste Horizons : " + C.hml[ii], F.pct(C.hm1[ii]));
+    h += "<p class=\"cap\">Bloc central : listes Horizons, Renaissance, MoDem, UDI, union du centre et divers centre. La nuance n'est attribuée que dans les communes de 3 500 habitants et plus, soit 66 % des inscrits." +
+      (C.cm1[ii] != null ? "" : " Cette commune n'en fait pas partie.") + "</p></div>";
+    return h;
+  }
+  function demoBlock(ii) {
+    var nat = demoAvg("FR"), dep = demoAvg(C.dep[ii]);
+    var h = "<div class=\"d-sec\"><h3>Démographie</h3><div class=\"tiles\">" + DEMO_TILES.map(function (t) {
+      var v = C[t[0]][ii];
+      return "<div class=\"tile\"><span class=\"tl\">" + esc(t[1]) + "</span><span class=\"tv\">" +
+        (v == null ? "n.d." : (t[0] === "pop" ? F.int(v) : METRICS[t[0]].fmt(v))) + "</span></div>";
+    }).join("") + "</div>";
+    var stand = [];
+    DEMO_TABLE.forEach(function (k) {
+      if (k === "dens") return;
+      var v = C[k][ii], n = nat[k];
+      if (v == null || !n) return;
+      var r = v / n;
+      if (Math.abs(Math.log(r)) >= 0.14) stand.push({ k: k, r: r });
+    });
+    stand.sort(function (a, b) { return Math.abs(Math.log(b.r)) - Math.abs(Math.log(a.r)); });
+    if (stand.length) {
+      h += "<p class=\"stand\">Par rapport à la métropole, se distingue par " + stand.slice(0, 3).map(function (d) {
+        return "<b>" + esc(TLAB[d.k][0].toLowerCase()) + " " + ratioTxt(d.r) + "</b>";
+      }).join(", ") + ".</p>";
+    }
+    h += "<div class=\"demo-wrap\"><table class=\"demo\"><thead><tr><th scope=\"col\">Indicateur</th><th scope=\"col\">Commune</th>" +
+      "<th scope=\"col\" class=\"dep\">Dép.</th><th scope=\"col\">Métropole</th><th scope=\"col\" class=\"g\">Écart</th></tr></thead><tbody>" +
+      DEMO_TABLE.map(function (k) {
+        var v = C[k][ii];
+        return "<tr><th scope=\"row\">" + esc(TLAB[k][0]) + "</th><td class=\"v\">" + tfmt(k, v) +
+          "</td><td class=\"dep\">" + tfmt(k, dep[k]) + "</td><td>" + tfmt(k, nat[k]) + "</td><td class=\"g\">" +
+          (v == null || !nat[k] ? "" : gapBar(v / nat[k])) + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+    h += "<p class=\"cap\">Recensement 2021 et revenu Filosofi 2021, moyennes pondérées par la population. La barre compare la commune à la métropole ; elle atteint le bord à trois fois la valeur nationale. Propriétaires et logement social donnent le type d'habitat, pavillonnaire ou collectif, qui change le rythme du porte-à-porte.</p></div>";
+    return h;
+  }
+  function miniLine(cv, nv) {
+    var w = 320, h = 112, ml = 34, mr = 46, mt = 8, mb = 20;
+    var all = cv.concat(nv).filter(function (v) { return v != null; });
+    var yMax = Math.max(100, Math.ceil(Math.max.apply(null, all) / 100) * 100);
+    var x = function (k) { return ml + k * (w - ml - mr) / 3; }, y = function (v) { return mt + (1 - v / yMax) * (h - mt - mb); };
+    var line = d3.line().defined(function (d) { return d != null; }).x(function (d, k) { return x(k); }).y(function (d) { return y(d); });
+    var s = "<svg class=\"mini\" viewBox=\"0 0 " + w + " " + h + "\" role=\"img\">";
+    [0, yMax / 2, yMax].forEach(function (g) {
+      s += "<line class=\"" + (g ? "grid" : "base") + "\" x1=\"" + ml + "\" x2=\"" + (w - mr) + "\" y1=\"" + y(g) + "\" y2=\"" + y(g) + "\"/>";
+      s += "<text x=\"" + (ml - 5) + "\" y=\"" + (y(g) + 3.5) + "\" text-anchor=\"end\">" + Math.round(g / 10) + " %</text>";
+    });
+    ["2007", "2012", "2017", "2022"].forEach(function (yr, k) { s += "<text x=\"" + x(k) + "\" y=\"" + (h - 6) + "\" text-anchor=\"middle\">" + yr + "</text>"; });
+    s += "<path class=\"nat\" d=\"" + line(nv) + "\"/><path class=\"ln\" d=\"" + line(cv) + "\"/>";
+    cv.forEach(function (v, k) { if (v != null) s += "<circle class=\"dot\" cx=\"" + x(k) + "\" cy=\"" + y(v) + "\" r=\"4\"><title>" + ["2007", "2012", "2017", "2022"][k] + " : " + F.pct(v) + " (France " + F.pct(nv[k]) + ")</title></circle>"; });
+    if (cv[3] != null) s += "<text class=\"lab\" x=\"" + (x(3) + 8) + "\" y=\"" + (y(cv[3]) + 4) + "\">" + F.pct(cv[3]) + "</text>";
+    return s + "</svg>";
+  }
+  function renderDossier() {
+    var ii = S.sel, el = $("dossier");
+    if (ii == null) { el.innerHTML = "<p class=\"empty\">Cliquez sur une commune de la carte ou du classement.</p>"; return; }
+    var dep = C.dep[ii], n = C.nbv[ii];
+    var h = "<div class=\"d-head\"><p class=\"eyebrow\">" + esc(META.depNames[dep] || "") + " (" + dep + ") · INSEE <span class=\"mono\">" + C.code[ii] + "</span></p>" +
+      "<h2>" + esc(C.nom[ii]) + "</h2><p class=\"d-sub\">" + F.int(C.ins[ii]) + " inscrits · " + n + (n > 1 ? " bureaux" : " bureau") + " de vote</p>";
+    var mm = mayorByCode[C.code[ii]];
+    if (mm) h += "<p class=\"chip mayor\">Maire Horizons : " + esc(mm.maire) + "</p> ";
+    if (C.hor[ii] != null) h += "<p class=\"chip hor\">Candidat Horizons 2024 : " + esc(META.horCands[C.horc[ii]]) + ", " + F.pct(C.hor[ii]) + "</p>";
+    var pk = METRICS[S.metric] && METRICS[S.metric].g === "Priorité porte-à-porte" ? S.metric : "fin";
+    if (C.abs1[ii] != null && C.cdg[ii] != null) {
+      var rk = C[pk][ii] != null ? Math.round(pctRank(pk, C[pk][ii]) * 100) : null;
+      h += "<p class=\"stand\" style=\"margin-top:10px\">Sur 100 inscrits, <b>" + Math.round(C.abs1[ii] / 10) + "</b> se sont abstenus au 1<sup>er</sup> tour de 2022 ; parmi les votants, <b>" +
+        Math.round(C.cdg[ii] / 10) + " %</b> ont choisi Macron ou Pécresse." + (rk != null ? " Cette commune est plus prioritaire que <b>" + rk + " %</b> des électeurs de métropole" +
+        (rk >= 90 ? ", elle fait partie des zones à visiter en premier." : rk >= 70 ? ", une zone à visiter si les équipes le permettent." : ".") : "") + "</p>";
+    }
+    h += "</div>";
+    h += "<div class=\"d-sec\"><h3>Potentiel électoral</h3>" + ELEC.map(function (k) { return prow(k, C[k][ii]); }).join("") +
+      "<p class=\"cap\">Point : position parmi les électeurs de métropole, de la valeur la plus basse (gauche) à la plus haute. Trait : médiane.</p></div>";
+    h += muniBlock(ii);
+    h += demoBlock(ii);
+    h += "<div class=\"d-sec\"><h3>Historique présidentiel, 1er tour</h3><div class=\"hist-leg\"><span><i></i>" + esc(C.nom[ii]) + "</span><span><i class=\"nat\"></i>Métropole</span></div><div class=\"hist\">" +
+      "<figure><figcaption>Centre + droite de gouvernement</figcaption>" + miniLine([C.cdg07[ii], C.cdg12[ii], C.cdg17[ii], C.cdg[ii]], NAT.cdg) + "</figure>" +
+      "<figure><figcaption>Abstention</figcaption>" + miniLine([C.ab07[ii], C.ab12[ii], C.ab17[ii], C.abs1[ii]], NAT.ab) + "</figure></div>" +
+      "<p class=\"cap\">Centre + droite : Bayrou + Sarkozy en 2007 et 2012, Macron + Fillon en 2017, Macron + Pécresse en 2022.</p></div>";
+    if (bStart[ii] >= 0) {
+      var rows = [];
+      for (var jj = bStart[ii]; jj < bEnd[ii]; jj++) rows.push(jj);
+      rows.sort(function (a, b) { return (B[pk][b] || 0) - (B[pk][a] || 0); });
+      h += "<div class=\"d-sec\"><h3>Bureaux de vote</h3><div class=\"bvwrap\"><table class=\"bvt\"><thead><tr><th>Bureau</th><th>Inscrits</th><th>" + esc(METRICS[pk].short) + "</th><th>Abstention</th></tr></thead><tbody>" +
+        rows.map(function (jj) {
+          return "<tr" + (B.flag[jj] ? " class=\"flag\" title=\"Participation trop faible, exclu des moyennes\"" : "") + "><td class=\"mono\">" + esc(B.bv[jj]) + "</td><td>" + F.int(B.ins[jj]) + "</td><td>" +
+            (B[pk][jj] == null ? "n.d." : METRICS[pk].fmt(B[pk][jj])) + "</td><td>" + (B.abs1[jj] == null ? "n.d." : F.pct(B.abs1[jj])) + "</td></tr>";
+        }).join("") + "</tbody></table></div><p class=\"cap\">Triés par " + esc(METRICS[pk].short.toLowerCase()) + " ; abstention du 1er tour 2022.</p></div>";
+    }
+    el.innerHTML = h;
+    el.scrollTop = 0;
+  }
+
+  // ---------- ranking ----------
+  var rankCols = { com: ["fin", "abs1", "cdg", "inc", "hor"], bv: ["fin", "vois", "abs1", "cdg"] };
+  function currentRows() {
+    var key = S.sortKey || S.metric, dir = S.sortDir, rows = [];
+    var val;
+    if (S.level === "com") {
+      for (var k = 0; k < metroC.length; k++) if (comOk(metroC[k])) rows.push(metroC[k]);
+      val = key === "ins" ? function (ii) { return C.ins[ii]; } : key === "nom" ? null : function (ii) { return C[key][ii]; };
+    } else {
+      for (k = 0; k < metroB.length; k++) if (bvOk(metroB[k])) rows.push(metroB[k]);
+      val = key === "ins" ? function (jj) { return B.ins[jj]; } : key === "nom" ? null : function (jj) { return (B[key] && B.flag[jj]) ? null : bvMetric(key, jj); };
+    }
+    if (key === "nom") {
+      var nm = S.level === "com" ? function (x) { return C.nom[x]; } : function (x) { return C.nom[B.com[x]]; };
+      rows.sort(function (a, b) { return dir * nm(a).localeCompare(nm(b), "fr"); });
+    } else {
+      rows.sort(function (a, b) {
+        var va = val(a), vb = val(b);
+        if (va == null) return vb == null ? 0 : 1;
+        if (vb == null) return -1;
+        return dir < 0 ? vb - va : va - vb;
+      });
+    }
+    return rows;
+  }
+  function renderRanking() {
+    var rows = currentRows(), cols = rankCols[S.level].slice(), sortKey = S.sortKey || S.metric;
+    if (cols.indexOf(S.metric) < 0) cols.splice(1, 0, S.metric);
+    var head = [["#", null, "r"], ["Commune", "nom", "l"]];
+    if (S.level === "bv") head.push(["Bureau", null, "l"]);
+    head.push(["Inscrits", "ins", "r"]);
+    cols.forEach(function (k) { head.push([METRICS[k].short || METRICS[k].label, k, "r"]); });
+    var th = head.map(function (hd) {
+      var sorted = hd[1] && hd[1] === sortKey;
+      var inner = hd[1] ? "<button type=\"button\" data-sort=\"" + hd[1] + "\">" + esc(hd[0]) + (sorted ? "<span class=\"arr\">" + (S.sortDir < 0 ? "▼" : "▲") + "</span>" : "") + "</button>" : esc(hd[0]);
+      return "<th class=\"" + hd[2] + "\"" + (sorted ? " aria-sort=\"" + (S.sortDir < 0 ? "descending" : "ascending") + "\"" : "") + " scope=\"col\">" + inner + "</th>";
+    }).join("");
+    var body = rows.slice(0, 150).map(function (x, r) {
+      var ii = S.level === "com" ? x : B.com[x];
+      var cells = "<td>" + (r + 1) + "</td><td class=\"l name\">" + esc(C.nom[ii]) + " <span class=\"muted\">" + C.dep[ii] + "</span>" + (mayorByCode[C.code[ii]] ? "<span class=\"horm sqm\" title=\"Maire Horizons\"></span>" : C.hor[ii] != null ? "<span class=\"horm\" title=\"Candidature Horizons 2024\"></span>" : "") + "</td>";
+      if (S.level === "bv") cells += "<td class=\"l mono\">" + esc(B.bv[x]) + "</td>";
+      cells += "<td>" + F.int(S.level === "com" ? C.ins[x] : B.ins[x]) + "</td>";
+      cols.forEach(function (k) {
+        var v = S.level === "com" ? C[k][x] : ((B[k] && B.flag[x]) ? null : bvMetric(k, x));
+        cells += "<td>" + (v == null ? "<span class=\"muted\">n.d.</span>" : METRICS[k].fmt(v)) + "</td>";
+      });
+      return "<tr data-c=\"" + ii + "\"" + (ii === S.sel ? " class=\"sel\"" : "") + ">" + cells + "</tr>";
+    }).join("");
+    $("rank").innerHTML = "<thead><tr>" + th + "</tr></thead><tbody>" + body + "</tbody>";
+    var zoneName = S.zone === "FR" ? "France métropolitaine" : META.depNames[S.zone];
+    $("rank-ctx").textContent = (S.level === "com" ? "Communes" : "Bureaux de vote") + " · " + zoneName + " · triés par " +
+      (sortKey === "nom" ? "nom" : sortKey === "ins" ? "inscrits" : METRICS[sortKey].label.toLowerCase());
+    var hidden = 0;
+    if (S.minIns > 0) { if (S.level === "com") { for (var hk = 0; hk < metroC.length; hk++) if (comMapOk(metroC[hk]) && C.ins[metroC[hk]] < S.minIns) hidden++; } else { for (hk = 0; hk < metroB.length; hk++) if (bvMapOk(metroB[hk]) && B.ins[metroB[hk]] < S.minIns) hidden++; } }
+    $("rank-foot").textContent = F.int(rows.length) + (S.level === "com" ? " communes" : " bureaux") + " correspondent aux réglages ; les 150 premières lignes sont affichées" +
+      (exportReady ? ", l'export contient toutes les lignes." : ".") + (hidden ? " " + F.int(hidden) + " de moins de " + F.int(S.minIns) + " inscrits sont masqués par le filtre de taille." : "");
+  }
+  $("rank").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-sort]");
+    if (b) {
+      var k = b.getAttribute("data-sort");
+      if ((S.sortKey || S.metric) === k) S.sortDir = -S.sortDir; else { S.sortKey = k; S.sortDir = k === "nom" ? 1 : -1; }
+      renderRanking(); return;
+    }
+    var tr = e.target.closest("tr[data-c]");
+    if (tr) select(+tr.getAttribute("data-c"), true);
+  });
+
+  // ---------- priority profile ----------
+  function renderProfile() {
+    var key = METRICS[S.metric] && METRICS[S.metric].g === "Priorité porte-à-porte" ? S.metric : "fin";
+    var zone = [];
+    for (var k = 0; k < metroC.length; k++) { var ii = metroC[k]; if (comOk(ii) && C[key][ii] != null) zone.push(ii); }
+    var totIns = zone.reduce(function (s, x) { return s + C.ins[x]; }, 0);
+    zone.sort(function (a, b) { return C[key][b] - C[key][a]; });
+    var prio = [], acc = 0;
+    for (k = 0; k < zone.length && acc < totIns * 0.1; k++) { prio.push(zone[k]); acc += C.ins[zone[k]]; }
+    var zoneName = S.zone === "FR" ? "la France métropolitaine" : META.depNames[S.zone];
+    if (prio.length < 3 || zone.length < 10) {
+      $("prof-ctx").textContent = "Pas assez de communes avec ces réglages pour comparer.";
+      $("prof").innerHTML = ""; return;
+    }
+    $("prof-ctx").textContent = "Les " + F.int(prio.length) + " communes au plus fort " + METRICS[key].label.toLowerCase() + ", qui regroupent 10 % des inscrits de " + zoneName + ", comparées à l'ensemble de la zone.";
+    function mean(set, kk) { var s = 0, w = 0; set.forEach(function (x) { var v = C[kk][x], p = C.pop[x]; if (v != null && p) { s += v * p; w += p; } }); return w ? s / w : null; }
+    var data = PROFILE.map(function (kk) { var a = mean(prio, kk), b = mean(zone, kk); return { k: kk, a: a, b: b, r: (a && b) ? a / b : null }; }).filter(function (d) { return d.r; });
+    data.sort(function (p, q) { return Math.abs(Math.log(q.r)) - Math.abs(Math.log(p.r)); });
+    var mx = d3.max(data, function (d) { return Math.max(d.r, 1 / d.r); });
+    var nice = [1.25, 1.5, 2, 3, 4, 6, 10].find(function (n) { return n >= mx; }) || mx;
+    var width = Math.max(300, $("prof").clientWidth || 420), narrow = width < 460;
+    var labW = narrow ? 118 : 150, valW = narrow ? 58 : 150, rowH = 30, top = 22;
+    var x = d3.scaleLog().domain([1 / nice, nice]).range([labW + 8, width - valW - 8]);
+    var hgt = top + data.length * rowH + 6;
+    var pctTxt = function (r) { var p = Math.round((r - 1) * 100); return (p > 0 ? "+" : p < 0 ? "−" : "") + Math.abs(p) + " %"; };
+    var s = "<svg viewBox=\"0 0 " + width + " " + hgt + "\" role=\"img\" aria-label=\"Écart des communes prioritaires à la moyenne de la zone, par indicateur\">";
+    [1 / nice, 1, nice].forEach(function (t) {
+      s += "<line class=\"" + (t === 1 ? "axis" : "gl") + "\" x1=\"" + x(t) + "\" x2=\"" + x(t) + "\" y1=\"" + (top - 6) + "\" y2=\"" + (hgt - 4) + "\"/>";
+      s += "<text class=\"tick\" x=\"" + x(t) + "\" y=\"" + (top - 10) + "\" text-anchor=\"middle\">" + (t === 1 ? "moyenne de la zone" : pctTxt(t)) + "</text>";
+    });
+    data.forEach(function (d, k2) {
+      var yy = top + k2 * rowH, m = METRICS[d.k], x0 = x(1), x1 = x(Math.max(1 / nice, Math.min(nice, d.r)));
+      s += "<g><title>" + esc(m.label) + " : " + m.fmt(d.a) + " dans les communes prioritaires, " + m.fmt(d.b) + " dans l'ensemble de la zone</title>";
+      s += "<rect class=\"track\" x=\"" + (labW + 8) + "\" y=\"" + (yy + 4) + "\" width=\"" + (width - valW - labW - 16) + "\" height=\"" + (rowH - 8) + "\" rx=\"3\"/>";
+      s += "<text x=\"" + labW + "\" y=\"" + (yy + rowH / 2 + 4.5) + "\" text-anchor=\"end\">" + esc(m.label) + "</text>";
+      s += "<rect class=\"bar\" x=\"" + Math.min(x0, x1) + "\" y=\"" + (yy + 9) + "\" width=\"" + Math.max(1.5, Math.abs(x1 - x0)) + "\" height=\"" + (rowH - 18) + "\" rx=\"2\"/>";
+      s += "<text class=\"v\" x=\"" + (width - valW) + "\" y=\"" + (yy + rowH / 2 + 4.5) + "\">" + pctTxt(d.r) + "</text>";
+      if (!narrow) s += "<text class=\"sub\" x=\"" + (width - valW + 46) + "\" y=\"" + (yy + rowH / 2 + 4.5) + "\">" + m.fmt(d.a) + " / " + m.fmt(d.b) + "</text>";
+      s += "</g>";
+    });
+    $("prof").innerHTML = s + "</svg>";
+  }
+
+  // ---------- selection, search ----------
+  function select(ii, zoomTo) {
+    S.sel = ii; renderDossier(); renderRanking(); schedule();
+    if (zoomTo) focusCommune(ii);
+  }
+  var normNames = null;
+  function norm(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[-'’]/g, " "); }
+  var qIn = $("q"), qRes = $("q-results");
+  qIn.addEventListener("input", function () {
+    var q = norm(qIn.value.trim()), qCode = qIn.value.trim().toUpperCase();
+    if (q.length < 2) { qRes.hidden = true; return; }
+    if (!normNames) normNames = C.nom.map(norm);
+    var starts = [], has = [];
+    for (var k = 0; k < C.n && starts.length < 8; k++) {
+      if (C.dep[k].charAt(0) === "Z") continue;
+      if (normNames[k].indexOf(q) === 0 || C.code[k] === qCode) starts.push(k);
+      else if (has.length < 8 && normNames[k].indexOf(q) > 0) has.push(k);
+    }
+    var hits = starts.concat(has).slice(0, 8);
+    qRes.innerHTML = hits.length ? hits.map(function (k) {
+      return "<li><button type=\"button\" data-c=\"" + k + "\"><span>" + esc(C.nom[k]) + "</span><span class=\"mono\">" + C.dep[k] + " · " + F.int(C.ins[k]) + "</span></button></li>";
+    }).join("") : "<li class=\"empty\" style=\"padding:6px 8px\">Aucune commune trouvée</li>";
+    qRes.hidden = false;
+  });
+  qRes.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-c]"); if (!b) return;
+    qRes.hidden = true; qIn.value = ""; select(+b.getAttribute("data-c"), true);
+  });
+  qIn.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { var b = qRes.querySelector("button"); if (b) b.click(); }
+    if (e.key === "Escape") qRes.hidden = true;
+  });
+  document.addEventListener("click", function (e) { if (!e.target.closest(".search")) qRes.hidden = true; });
+
+  // ---------- control wiring ----------
+  function refresh() { renderLegend(); renderRanking(); renderProfile(); schedule(); remember(); }
+  function syncLevel() {
+    $("lvl-com").setAttribute("aria-pressed", S.level === "com");
+    $("lvl-bv").setAttribute("aria-pressed", S.level === "bv");
+  }
+  metricSel.addEventListener("change", function () { S.metric = metricSel.value; S.sortKey = null; S.sortDir = -1; refresh(); });
+  $("lvl-com").addEventListener("click", function () { S.level = "com"; syncLevel(); refresh(); });
+  $("lvl-bv").addEventListener("click", function () { S.level = "bv"; syncLevel(); refresh(); });
+  zoneSel.addEventListener("change", function () {
+    S.zone = zoneSel.value;
+    $("map-zone").textContent = S.zone === "FR" ? "France métropolitaine" : S.zone + " " + META.depNames[S.zone];
+    goTo(zoneTransform(), true); refresh();
+  });
+  $("minins").addEventListener("change", function () { S.minIns = +$("minins").value; refresh(); });
+  $("hor-only").addEventListener("change", function (e) { S.horOnly = e.target.checked; refresh(); });
+  $("hor-ring").addEventListener("change", function (e) { S.horRing = e.target.checked; renderLegend(); schedule(); });
+
+  // ---------- export ----------
+  var downloads = null, exportReady = false;
+  var localMode = !(window.claude && typeof window.claude.use === "function");
+  function toast(msg) { var t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { t.hidden = true; }, 2800); }
+  function csvNum(v, scale) { return v == null ? "" : String(Math.round(v / scale * 100000) / 100000).replace(".", ","); }
+  function buildCsv() {
+    var rows = currentRows(), lines = [];
+    var keys = ["fin", "vois", "oa", "ob", "oc", "po1", "po2", "abs1", "cdg", "sw"];
+    if (S.level === "com") {
+      var demo = ["hor"].concat(DEMO_ROWS);
+      lines.push(["code_insee", "commune", "departement", "inscrits_2022", "bureaux"].concat(keys.map(function (k) { return METRICS[k].label; }), demo.map(function (k) { return METRICS[k].label; })).join(";"));
+      rows.forEach(function (ii) {
+        lines.push([C.code[ii], "\"" + C.nom[ii].replace(/"/g, "\"\"") + "\"", C.dep[ii], C.ins[ii], C.nbv[ii]]
+          .concat(keys.map(function (k) { return csvNum(C[k][ii], (METRICS[k].fmt === F.rk ? 10 : 1000)); }))
+          .concat(demo.map(function (k) { return csvNum(C[k][ii], (k === "inc" || k === "dens") ? 1 : 1000); })).join(";"));
+      });
+    } else {
+      lines.push(["code_insee", "commune", "departement", "bureau", "inscrits_2022", "faible_participation"].concat(keys.map(function (k) { return METRICS[k].label; })).join(";"));
+      rows.forEach(function (jj) {
+        var ii = B.com[jj];
+        lines.push([C.code[ii], "\"" + C.nom[ii].replace(/"/g, "\"\"") + "\"", C.dep[ii], B.bv[jj], B.ins[jj], B.flag[jj]]
+          .concat(keys.map(function (k) { return csvNum(B[k][jj], (METRICS[k].fmt === F.rk ? 10 : 1000)); })).join(";"));
+      });
+    }
+    return "﻿" + lines.join("\r\n") + "\r\n";
+  }
+  $("export").textContent = "Télécharger la liste pour le terrain";
+  $("export").addEventListener("click", function () {
+    var name = "ciblage-2027-" + (S.zone === "FR" ? "metropole" : "dep-" + S.zone) + "-" + (S.level === "com" ? "communes" : "bureaux") + ".csv";
+    var csv = buildCsv();
+    if (downloads) {
+      downloads.save({ filename: name, data: new Blob([csv], { type: "text/csv" }) })
+        .then(function () { toast("Fichier enregistré"); })
+        .catch(function (e) {
+          var code = e && e.code;
+          if (code === "declined") toast("Export annulé");
+          else if (code === "rate_limited") toast("Une fenêtre d'enregistrement est déjà ouverte");
+          else toast("L'export n'est pas disponible dans cette vue");
+        });
+    } else if (localMode) {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+  });
+  if (localMode) { exportReady = true; $("export").hidden = false; }
+  else {
+    window.claude.use("downloads").then(function (d) {
+      downloads = d; exportReady = !!d; $("export").hidden = !d; renderRanking();
+    }).catch(function () { });
+  }
+
+  // ---------- theme changes repaint the canvas ----------
+  function retheme() { TK = null; renderLegend(); schedule(); }
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  var mq = window.matchMedia("(prefers-color-scheme: dark)");
+  if (mq.addEventListener) mq.addEventListener("change", retheme);
+
+  // ---------- boot ----------
+  metricSel.value = S.metric; zoneSel.value = S.zone; $("minins").value = String(S.minIns); syncLevel();
+  $("map-zone").textContent = S.zone === "FR" ? "France métropolitaine" : S.zone + " " + META.depNames[S.zone];
+  renderLegend(); renderDossier(); renderRanking(); renderProfile();
+  var ro = new ResizeObserver(function () { resize(); renderProfile(); });
+  ro.observe(wrap);
+})();
+</script>
