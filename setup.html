@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setup — Adrien Joly</title>
+<meta name="description" content="Replicate Adrien Joly's research and organisation setup with Claude Code in one paste: dictated notes to calendar, reminders and autonomous Claude sessions.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.lead{font-size:1.1rem;color:var(--muted);margin:0 0 1.5rem}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:.9rem}.flow span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px}.flow i{color:var(--muted);font-style:normal}
+.step{display:grid;grid-template-columns:40px 1fr;gap:14px;margin:18px 0}.n{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font:600 15px ui-monospace,monospace;display:flex;align-items:center;justify-content:center;margin-top:4px}
+.step h3{margin:0 0 .4rem;font-size:1.05rem}
+pre,code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}pre{background:#f3f1ec;border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow:auto;white-space:pre-wrap;word-break:break-word}code{background:#f3f1ec;padding:1px 4px;border-radius:4px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.95rem}td,th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-weight:600}
+button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--accent);color:#fff;border:0;border-radius:6px;padding:9px 14px;cursor:pointer}button:hover{filter:brightness(1.1)}
+.small{font-size:.9rem;color:var(--muted)}.box{border:1px solid var(--line);border-radius:8px;padding:14px 18px;background:#fff;margin:14px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="site">
+    <a class="name" href="index.html">Adrien Joly</a>
+    <nav class="site">
+      <a href="index.html">Home</a>
+      <a href="cv.html">CV</a>
+      <a href="research.html">Research</a>
+      <a href="writing.html">Writing</a>
+      <a href="talks.html">Talks</a>
+      <a href="setup.html" aria-current="page">Setup</a>
+    </nav>
+  </header>
+
+<h1>Setup: dictate, sort, execute</h1>
+<p class="lead">One note a day on the phone, one command on the Mac, and every line becomes a calendar entry, a reminder, or a Claude Code session that works while you do something else. Everything here is open: copy one script, paste it in a terminal, and you have the same setup in about ten minutes.</p>
+
+<div class="flow"><span>Apple Notes (dictated)</span><i>→</i><span><code>cc inbox</code> classifies</span><i>→</i><span>Calendar · Reminders</span><i>·</i><span>Claude Code sessions (tmux)</span><i>→</i><span>ledger → cockpit → weekly memo</span></div>
+
+<h2>What you get</h2>
+<table>
+<tr><th>Command</th><th>What it does</th></tr>
+<tr><td><code>cc</code></td><td>pick a project, open (or re-attach) its Claude Code session; <code>cc &lt;name&gt; -c</code> resumes the last conversation</td></tr>
+<tr><td><code>cc inbox</code></td><td>reads today's Apple Note, classifies each line (task / event / reminder, with a priority), shows the plan, then dispatches: events to Calendar, reminders to Reminders, tasks to their own session. <code>--auto</code> runs tasks detached and autonomously</td></tr>
+<tr><td><code>cc run</code> · <code>cc cockpit</code></td><td>launch every open task through a background queue; one page with tasks by priority, what's waiting on you, running sessions, today's log</td></tr>
+<tr><td><code>cc memo</code> · <code>--message</code></td><td>compiles the week's work (session ledger, project logs, git) into a memo draft, then into a short message with named asks and deadlines</td></tr>
+<tr><td><code>cc comms</code></td><td>a bank of drafted messages pushed into a Reminders list, editable and copyable from the phone</td></tr>
+<tr><td>Right-click → Services</td><td><b>Accentuer</b> fixes French accents in any selected text (for a US keyboard); <b>Launch idea</b> turns a selected Note line into a session</td></tr>
+</table>
+<p class="small">Each project folder carries a <code>CLAUDE.md</code> (what the project is, where raw data lives, the rules), so a session never needs the context explained twice. Raw data is treated as read-only everywhere.</p>
+
+<h2>Install in three steps</h2>
+
+<div class="step"><div class="n">1</div><div><h3>Claude Code on the Mac</h3>
+<p>You need a Claude account (Pro or Max), the <a href="https://claude.ai/download">Claude desktop app</a>, and Claude Code. The clearest walkthrough for non-developers is Chris Blattman's <a href="https://claudeblattman.com/toolkit/install-mac/">Install Claude Code (Mac)</a>; the short version:</p>
+<pre>curl -fsSL https://claude.ai/install.sh | bash
+claude        # sign in once, then type anything to check it answers</pre>
+<p class="small">Homebrew is needed for <code>tmux</code> and <code>fzf</code>: <a href="https://brew.sh">brew.sh</a>, one command to paste.</p></div></div>
+
+<div class="step"><div class="n">2</div><div><h3>The kit, in one paste</h3>
+<p>The script below contains every file of the kit (22 files, all plain text, nothing downloaded from anywhere). It writes them to <code>~/claude-kit</code> and runs the installer: launcher, scripts, Quick Actions, tmux config, a scratch folder with a project template, and one line in your <code>.zshrc</code>. Read it first if you like; that is the point of shipping it as text.</p>
+<p><button id="copy">Copy the installer</button> &nbsp; <a href="assets/claude-kit-installer.zsh" download>or download it (.zsh, 80 KB)</a> <span id="ok" class="small"></span></p>
+<p>Then in Terminal: paste, press Enter. Or, to run it straight from the clipboard:</p>
+<pre>pbpaste | zsh</pre>
+
+</div></div>
+
+<div class="step"><div class="n">3</div><div><h3>First run</h3>
+<pre>cc ls                 # should show: scratch
+cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
+<p>Create a note titled <b>to dos &lt;today's date&gt;</b> in Apple Notes with three lines: a meeting (“call X Thursday 3pm”), a reminder (“send the file to Y tomorrow”), a piece of work (“write a one-page summary of …”). Then <code>cc inbox</code>. macOS will ask once to let Terminal control Notes, Calendar and Reminders.</p>
+<p>For each existing work folder: <code>cd</code> into it, <code>cc add</code>, then in the session ask Claude to write the project's <code>CLAUDE.md</code>. From then on <code>cc &lt;name&gt;</code> opens it with its context.</p></div></div>
+
+<h2>The daily loop</h2>
+<table>
+<tr><th>When</th><th>What</th></tr>
+<tr><td>Anytime, phone</td><td>Dictate into today's note (Siri: “note: …”). Lines, not paragraphs: a verb, the input, the output.</td></tr>
+<tr><td>Morning, Mac</td><td><code>cc inbox --auto</code>. Events and reminders land; tasks start as detached sessions. <code>cc cockpit</code> to see the board.</td></tr>
+<tr><td>Through the day</td><td><code>cc</code> to jump into a session; <code>Option+←/→</code> between them; <code>Ctrl-b d</code> to leave everything running.</td></tr>
+<tr><td>Weekly</td><td><code>cc memo</code>, dictate what the sessions can't know, <code>cc memo --message</code>, send.</td></tr>
+</table>
+
+<h2>What it is not</h2>
+<p>It does not send anything. Messages and emails are drafts you copy and send yourself; sessions write files, never post. It does not touch raw data. It does not share anything across machines: the state lives in <code>~/scratch</code> and <code>~/.config/claude-launcher</code> on your Mac. And it is a set of plain zsh and Python files you can read in an afternoon, which is why it is shared this way rather than as an app.</p>
+
+<h2>Credits</h2>
+<p>Built with Claude, in one morning, on top of the Claude Code setup guides at <a href="https://claudeblattman.com">Claude Blattman</a> (Chris Blattman's open resource for researchers who don't code; his <a href="https://github.com/chrisblattman/claudeblattman">starter kit</a> is a good next step: <code>/plugin marketplace add chrisblattman/claudeblattman</code>). The kit here is MIT-licensed: take it, change it, share it.</p>
+<p class="small">Page generated 4 November 2026. The installer is also published as a <a href="https://claude.ai/artifact/VE7eedii7adS62wUkyY8QT">single page on claude.ai</a>.</p>
+
+</div>
+<script>
+document.getElementById('copy').addEventListener('click',async()=>{const ok=document.getElementById('ok');try{const r=await fetch('assets/claude-kit-installer.zsh');const t=await r.text();await navigator.clipboard.writeText(t);ok.textContent='Copied — paste it in Terminal and press Enter (or: pbpaste | zsh).';}catch(e){ok.textContent='Copy failed — use the download link instead.';}});
+</script>
+</body>
+</html>
