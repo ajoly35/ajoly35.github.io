@@ -104,6 +104,7 @@ cc cockpit          la liste par priorité                        cc run [P1]   
 cc me <id>          tâche à faire soi-même                       cc clean         fermer les sessions terminées
 cc reset [id]       remettre à faire                             cc queue "…"     une tâche dans la file
 cc comms            messages préparés → Rappels « Comms »        cc memo          point hebdomadaire (--message)
+cc todo "…"         ajouter une ligne à la note du jour (Notes) — Claude Code peut le faire aussi, à votre demande
 cc tri / note / evalue   optionnel : trier ou écrire des notes selon votre propre standard ($CC_KIT, un fichier .md)
 ```
 Fichiers : `~/.config/claude-launcher/` (lanceur, scripts, `projects.txt`, `config.json`, `ledger/`), `~/scratch/`
@@ -203,6 +204,7 @@ cat > "$T/launcher/cc.zsh" <<'KIT_EOF_3'
 #   cc inbox           classify today's note lines → tasks launched here, events → Calendar,
 #                      reminders → Reminders; shows the plan and asks before doing anything
 #   cc inbox --auto    same, but every task goes to the queue runner (detached, autonomous) — nothing to attach
+#   cc todo "line"...  add to-do lines to today's note in Notes (in the Claude folder; created if missing)
 #   cc clean           close sessions whose claude has finished (pane back to a shell)
 #   cc reset [id...]   put tasks back to « à faire » (default: running ones whose session is gone)
 #   cc me <id>...      mark tasks as yours (send, call, decide): cc run never gives them to a session
@@ -430,6 +432,10 @@ cc() {
       shift; [[ -r "$1" ]] || { echo "usage: cc evalue <note.md>" >&2; return 1; }
       { cat "$CC_KIT"; echo; echo "## Note à évaluer"; echo; cat "$1"; } \
         | claude -p "Applique la commande « évalue » du module 2 à la note ci-dessous : tableau critère/note/phrase/reformulation, score sur 10 et verdict, trois corrections prioritaires. Ne réécris pas la note. Markdown, sans préambule." ;;
+    todo)
+      # cc todo "line" ["line" ...]  — add to-dos to today's note in Notes (creates it in the Claude folder if needed)
+      shift; [[ -z "$*" ]] && { echo 'usage: cc todo "ligne" ["ligne" ...]' >&2; return 1; }
+      python3 "$CC_NOTES_PY" add "$@" ;;
     clean)
       # close the tmux sessions whose claude has ended (the pane is back to a shell); running ones are kept
       local s c k=0
@@ -446,7 +452,7 @@ cc() {
     kill)
       local d; d=$(_cc_path_for "$2") || { echo "cc: unknown project '$2'" >&2; return 1; }
       tmux kill-session -t "=$(_cc_session_name "$d")" ;;
-    help|-h|--help) sed -n '2,34p' "${(%):-%x}" ;;
+    help|-h|--help) sed -n '2,35p' "${(%):-%x}" ;;
     *)
       local d; d=$(_cc_path_for "$cmd") || { echo "cc: unknown project '$cmd' (try: cc ls)" >&2; return 1; }
       shift; _cc_launch "$d" "$@" ;;
@@ -1504,6 +1510,7 @@ cat > "$T/launcher/notes_ideas.py" <<'KIT_EOF_12'
   notes_ideas.py today-note                     -> title of today's note (date in title > created today > modified today)
   notes_ideas.py today                          -> title of today's note, then its open to-do lines
   notes_ideas.py slug   TEXT                    -> prints a folder-safe slug for TEXT
+  notes_ideas.py add    "LINE" ["LINE" ...]      -> appends to-do lines to today's note (creates "To dos <d> <mois>" if none)
 
 Default note title: $CC_NOTE or "Ideas". Only notes in the folder CC_NOTES_FOLDER (default "Claude") are read/written;
 locked (password-protected) notes are never read; a line starting with 🔒, privé, private or // is skipped.
@@ -1737,6 +1744,53 @@ def slug(text, max_words=5):
     return s[:40].rstrip("-")
 
 
+APPEND_NTH = '''
+on run argv
+  tell application "Notes"
+    set t to item 1 of argv
+    set ns to (every note whose name is t)
+    if (count of ns) = 0 then error "no note titled " & t
+    set n to item 1 of ns
+    set body of n to (body of n) & (item 2 of argv)
+  end tell
+end run'''
+
+CREATE_NOTE = '''
+on run argv
+  tell application "Notes"
+    if (item 1 of argv) is "" then
+      make new note with properties {body:item 2 of argv}
+    else
+      if not (exists folder (item 1 of argv)) then make new folder with properties {name:item 1 of argv}
+      make new note at folder (item 1 of argv) with properties {body:item 2 of argv}
+    end if
+  end tell
+end run'''
+
+MONTHS_FR = ["janv", "févr", "mars", "avr", "mai", "juin", "juil", "août", "sept", "oct", "nov", "déc"]
+
+
+def today_title(d=None):
+    import datetime as _dt
+    d = d or _dt.date.today()
+    return f"To dos {d.day} {MONTHS_FR[d.month - 1]}"
+
+
+def add(lines, title=None):
+    """Append to-do lines to today's note (in the allowed folder); create the note if there is none yet."""
+    lines = [l.strip() for l in lines if l.strip()]
+    if not lines:
+        sys.exit("nothing to add")
+    html_lines = "".join(f"<div>{html.escape(l)}</div>" for l in lines)
+    target = title or (find_today_notes() or [None])[0]
+    if target:
+        osascript(APPEND_NTH, target, html_lines)
+        return target
+    t = today_title()
+    osascript(CREATE_NOTE, notes_folder(), f"<div><h1>{html.escape(t)}</h1></div>{html_lines}")
+    return t
+
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
@@ -1770,6 +1824,11 @@ def main():
         sys.exit(0 if ok else 2)
     elif cmd == "notes":
         print(osascript(LIST_NOTES).replace(chr(30), "\n"))
+    elif cmd == "add":
+        # add "line" ["line" ...]  (or lines on stdin): append to today's note, creating it if needed
+        lines = rest if rest else sys.stdin.read().splitlines()
+        t = add(lines, title if title != note_title() else None)
+        print(f"added {len([l for l in lines if l.strip()])} line(s) to « {t} »", file=sys.stderr)
     elif cmd == "slug":
         print(slug(" ".join(rest)))
     else:
@@ -2077,6 +2136,7 @@ cat > "$T/template/CLAUDE.md" <<'KIT_EOF_18'
 - If this grows into a real project, say so and it gets moved out of `~/scratch` and renamed.
 - **Ledger.** When a task is finished (a note drafted, a figure produced, an app deployed, an analysis run), append ONE line to `~/.config/claude-launcher/ledger/$(date +%G-W%V).md` in the form `- YYYY-MM-DD HH:MM | <project> | <what was done, one sentence, in French> | <links or file paths>`. Create the file if missing. This feeds the weekly memo; don't log exploration or failed attempts.
 - **Cockpit.** If this session was started from a cockpit task (the prompt gives a cockpit id, or `notes/log.md` has a line `- cockpit id: <id>`), when the work is delivered run `python3 ~/.config/claude-launcher/cockpit.py done <id> --note "<one line>"`. Autonomous sessions put their results in the output folder named in the prompt, with a README.md saying what to check.
+- **Notes.** To add a to-do to my day, run `python3 ~/.config/claude-launcher/notes_ideas.py add "<line>" ["<line>" ...]` (one line per to-do, written as verb + input + output; it goes to today's note in the Notes folder « Claude », created if missing). Only add what I asked for. If the sandbox blocks it (Apple Events), ask me to approve running it outside the sandbox.
 KIT_EOF_18
 mkdir -p "$T/template"
 cat > "$T/template/scratch-CLAUDE.md" <<'KIT_EOF_19'
@@ -2090,6 +2150,7 @@ If a session starts here at the top level, ask which subfolder (or whether to cr
 - Stack: Python (pandas/polars), LaTeX.
 - **Ledger.** When a task is finished (a note drafted, a figure produced, an app deployed, an analysis run), append ONE line to `~/.config/claude-launcher/ledger/$(date +%G-W%V).md` in the form `- YYYY-MM-DD HH:MM | <project> | <what was done, one sentence, in French> | <links or file paths>`. Create the file if missing. This feeds the weekly memo; don't log exploration or failed attempts.
 - **Cockpit.** If this session was started from a cockpit task (the prompt gives a cockpit id, or `notes/log.md` has a line `- cockpit id: <id>`), when the work is delivered run `python3 ~/.config/claude-launcher/cockpit.py done <id> --note "<one line>"`. Autonomous sessions put their results in the output folder named in the prompt, with a README.md saying what to check.
+- **Notes.** To add a to-do to my day, run `python3 ~/.config/claude-launcher/notes_ideas.py add "<line>" ["<line>" ...]` (one line per to-do, written as verb + input + output; it goes to today's note in the Notes folder « Claude », created if missing). Only add what I asked for. If the sandbox blocks it (Apple Events), ask me to approve running it outside the sandbox.
 KIT_EOF_19
 mkdir -p "$T/services/Accentuer.workflow/Contents"
 cat > "$T/services/Accentuer.workflow/Contents/Info.plist" <<'KIT_EOF_20'
