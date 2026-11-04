@@ -43,12 +43,16 @@ button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial
 <tr><th>Command</th><th>What it does</th></tr>
 <tr><td><code>cc</code></td><td>pick a project, open (or re-attach) its Claude Code session; <code>cc &lt;name&gt; -c</code> resumes the last conversation</td></tr>
 <tr><td><code>cc inbox</code></td><td>reads today's Apple Note, classifies each line (task / event / reminder, with a priority), shows the plan, then dispatches: events to Calendar, reminders to Reminders, tasks to their own session. <code>--auto</code> runs tasks detached and autonomously</td></tr>
-<tr><td><code>cc run</code> · <code>cc cockpit</code></td><td>launch every open task through a background queue; one page with tasks by priority, what's waiting on you, running sessions, today's log</td></tr>
+<tr><td><code>cc cockpit</code> · <code>cc run</code></td><td>one page with tasks by priority (to do / running / <i>to review</i> / <i>yours</i>), what's waiting on you, running sessions, today's log; <code>cc run</code> hands every open task to a background queue that starts up to three headless Claude sessions at a time, P1 first, each in its project folder, results in <code>output/</code></td></tr>
+<tr><td><code>cc me</code> · <code>cc clean</code> · <code>cc reset</code></td><td>mark a task as yours (send, call, decide: never given to a session); close finished sessions; put a task back to “to do”</td></tr>
 <tr><td><code>cc memo</code> · <code>--message</code></td><td>compiles the week's work (session ledger, project logs, git) into a memo draft, then into a short message with named asks and deadlines</td></tr>
 <tr><td><code>cc comms</code></td><td>a bank of drafted messages pushed into a Reminders list, editable and copyable from the phone</td></tr>
 <tr><td>Right-click → Services</td><td><b>Accentuer</b> fixes French accents in any selected text (for a US keyboard); <b>Launch idea</b> turns a selected Note line into a session</td></tr>
 </table>
 <p class="small">Each project folder carries a <code>CLAUDE.md</code> (what the project is, where raw data lives, the rules), so a session never needs the context explained twice. Raw data is treated as read-only everywhere.</p>
+
+<h3>Coming from VS Code</h3>
+<p>Your Claude Code conversations in VS Code are kept on disk, per project folder, so closing the windows loses nothing but what was running at that moment. To continue one from the terminal: <code>cc &lt;name&gt; -c</code> resumes the latest conversation in that folder, or <code>cd</code> into it and <code>claude --resume</code> to pick from a list. Project context lives in each folder's <code>CLAUDE.md</code>, which every new session reads by itself. Use zsh, the Mac's default shell: <code>cc</code> doesn't exist in bash.</p>
 
 <h2>Install in three steps</h2>
 
@@ -59,26 +63,49 @@ claude        # sign in once, then type anything to check it answers</pre>
 <p class="small">Homebrew is needed for <code>tmux</code> and <code>fzf</code>: <a href="https://brew.sh">brew.sh</a>, one command to paste.</p></div></div>
 
 <div class="step"><div class="n">2</div><div><h3>The kit, in one paste</h3>
-<p>The script below contains every file of the kit (22 files, all plain text, nothing downloaded from anywhere). It writes them to <code>~/claude-kit</code> and runs the installer: launcher, scripts, Quick Actions, tmux config, a scratch folder with a project template, and one line in your <code>.zshrc</code>. Read it first if you like; that is the point of shipping it as text.</p>
-<p><button id="copy">Copy the installer</button> &nbsp; <a href="assets/claude-kit-installer.zsh" download>or download it (.zsh, 80 KB)</a> <span id="ok" class="small"></span></p>
+<p>The script below contains every file of the kit (24 files, all plain text, nothing downloaded from anywhere). It writes them to <code>~/claude-kit</code> and runs the installer: launcher, scripts, Quick Actions, tmux config, a scratch folder with a project template, and one line in your <code>.zshrc</code>. Read it first if you like; that is the point of shipping it as text.</p>
+<p><button id="copy">Copy the installer</button> &nbsp; <a href="assets/claude-kit-installer.zsh" download>or download it (.zsh, 110 KB)</a> <span id="ok" class="small"></span></p>
 <p>Then in Terminal: paste, press Enter. Or, to run it straight from the clipboard:</p>
 <pre>pbpaste | zsh</pre>
 
 </div></div>
 
-<div class="step"><div class="n">3</div><div><h3>First run</h3>
-<pre>cc ls                 # should show: scratch
+<div class="step"><div class="n">3</div><div><h3>Lock it down, then first run</h3>
+<pre>python3 ~/.config/claude-launcher/merge-settings.py   # sandbox + deny rules into ~/.claude/settings.json
+cc ls                 # should show: scratch
 cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
-<p>Create a note titled <b>to dos &lt;today's date&gt;</b> in Apple Notes with three lines: a meeting (“call X Thursday 3pm”), a reminder (“send the file to Y tomorrow”), a piece of work (“write a one-page summary of …”). Then <code>cc inbox</code>. macOS will ask once to let Terminal control Notes, Calendar and Reminders.</p>
+<p class="small">The merge script backs up your settings, keeps every rule you already have, refuses a file that is already broken (and says which line), and validates the result. Don't paste the snippet by hand: a stray <code>{ ... }</code> breaks the whole file.</p>
+<p>In Apple Notes, create a folder named <b>Claude</b> (the kit reads nothing else), and in it a note titled <b>to dos &lt;today's date&gt;</b> with three lines: a meeting (“call X Thursday 3pm”), a reminder (“send the file to Y tomorrow”), a piece of work (“write a one-page summary of …”). Then <code>cc inbox</code>. macOS will ask once to let Terminal control Notes, Calendar and Reminders.</p>
 <p>For each existing work folder: <code>cd</code> into it, <code>cc add</code>, then in the session ask Claude to write the project's <code>CLAUDE.md</code>. From then on <code>cc &lt;name&gt;</code> opens it with its context.</p></div></div>
 
 <h2>The daily loop</h2>
 <table>
 <tr><th>When</th><th>What</th></tr>
 <tr><td>Anytime, phone</td><td>Dictate into today's note (Siri: “note: …”). Lines, not paragraphs: a verb, the input, the output.</td></tr>
-<tr><td>Morning, Mac</td><td><code>cc inbox --auto</code>. Events and reminders land; tasks start as detached sessions. <code>cc cockpit</code> to see the board.</td></tr>
+<tr><td>Morning, Mac</td><td><code>cc inbox</code>. Events and reminders land, tasks go to the cockpit rewritten as verb + input + output. <code>cc me &lt;id&gt;</code> on the ones only you can do, then <code>cc run</code> and walk away.</td></tr>
+<tr><td>Back at the desk</td><td><code>cc cockpit</code>: tasks marked <i>to review</i> have their results in <code>output/</code> with a README saying what to check. <code>cc &lt;session&gt;</code> then <code>claude -c</code> to keep working with the session that did it; <code>cc clean</code> to close the rest.</td></tr>
 <tr><td>Through the day</td><td><code>cc</code> to jump into a session; <code>Option+←/→</code> between them; <code>Ctrl-b d</code> to leave everything running.</td></tr>
 <tr><td>Weekly</td><td><code>cc memo</code>, dictate what the sessions can't know, <code>cc memo --message</code>, send.</td></tr>
+</table>
+
+<h2>Security</h2>
+<table>
+<tr><th>Layer</th><th>Rule</th></tr>
+<tr><td>Notes</td><td>Only the Notes folder “Claude” is read; locked notes never; a line starting with 🔒, <code>privé</code> or <code>//</code> is skipped.</td></tr>
+<tr><td>Disk</td><td>Claude Code's sandbox (Seatbelt, enforced by macOS): sessions write only to their project folder plus the ledger, cockpit and queue; never read <code>~/.ssh</code>, keychains, cookies, mail, messages, <code>.env</code> files or keys; never write to a <code>raw/</code> folder. Cloud folders (<code>~/Library/CloudStorage</code>: Dropbox, iCloud Drive) stay readable.</td></tr>
+<tr><td>Network</td><td>Shell commands reach only a short list of domains; web research goes through Claude's own tools, allowed for a list of reference sources you extend.</td></tr>
+<tr><td>Secrets</td><td>API keys in the macOS Keychain: <code>security add-generic-password -a "$USER" -s &lt;name&gt; -T /usr/bin/security -U -w</code> (the <code>-T</code> spares you a password prompt on every read).</td></tr>
+<tr><td>Autonomy</td><td>Queued sessions run in <code>acceptEdits</code>: file edits and sandboxed shell commands yes, anything else refused rather than asked. They never send, post, push or delete.</td></tr>
+</table>
+
+<h2>If it stalls</h2>
+<table>
+<tr><th>Symptom</th><th>Fix</th></tr>
+<tr><td><code>launchctl list | grep cc-queue</code> shows <code>126</code></td><td>a script lost its execute bit: <code>chmod +x ~/.config/claude-launcher/*.zsh</code>, then rerun <code>zsh ~/claude-kit/install.sh</code></td></tr>
+<tr><td>“settings.json: invalid JSON”</td><td>usually a pasted placeholder: fix the line it names, then run <code>merge-settings.py</code></td></tr>
+<tr><td>Queue empties, nothing produced</td><td><code>tail ~/scratch/.queue/done/queue.log</code> and the <code>notes/run-*.log</code> in the task's folder</td></tr>
+<tr><td>A result is vague</td><td>the task line was: rewrite it as verb + input + output, <code>cc reset &lt;id&gt;</code>, <code>cc run</code></td></tr>
+<tr><td>Not sure what's happening</td><td><code>cd ~/scratch &amp;&amp; claude</code>, then ask: “where is the queue at?”</td></tr>
 </table>
 
 <h2>What it is not</h2>
@@ -86,7 +113,7 @@ cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
 
 <h2>Credits</h2>
 <p>Built with Claude, in one morning, on top of the Claude Code setup guides at <a href="https://claudeblattman.com">Claude Blattman</a> (Chris Blattman's open resource for researchers who don't code; his <a href="https://github.com/chrisblattman/claudeblattman">starter kit</a> is a good next step: <code>/plugin marketplace add chrisblattman/claudeblattman</code>). The kit here is MIT-licensed: take it, change it, share it.</p>
-<p class="small">Page generated 4 November 2026. The installer is also published as a <a href="https://claude.ai/artifact/VE7eedii7adS62wUkyY8QT">single page on claude.ai</a>.</p>
+<p class="small">Page updated 4 November 2026 (afternoon: fixed queue runner, cockpit review states, security merge script). The installer is also published as a <a href="https://claude.ai/artifact/VE7eedii7adS62wUkyY8QT">single page on claude.ai</a>.</p>
 
 </div>
 <script>

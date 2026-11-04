@@ -4,78 +4,146 @@
 set -e
 T="$HOME/claude-kit"; mkdir -p "$T"
 echo "→ writing kit files to $T"
-true
 cat > "$T/README.md" <<'KIT_EOF_0'
 # Kit Claude — dicter, trier, exécuter
 
-Ce kit installe sur un Mac la chaîne décrite dans le brief « Comment j'utilise Claude au quotidien » :
-une note par jour → `cc inbox` → agenda / rappels / sessions de travail Claude Code ; `cc memo` pour le point
-hebdomadaire ; « Accentuer » pour les accents d'un clic droit.
+Une note par jour sur le téléphone, une commande sur le Mac : chaque ligne devient un rendez-vous, un rappel, ou une
+session Claude Code qui travaille pendant que vous faites autre chose. Un cockpit tient la liste par priorité, une file
+d'attente lance les sessions sans vous, un journal alimente le point hebdomadaire.
 
 ## Prérequis (10 min)
 1. Un compte Claude (Pro ou Max) et l'application Claude pour Mac.
-2. Claude Code installé ; lancer `claude` une fois dans un terminal pour se connecter.
-3. Homebrew (https://brew.sh).
+2. Claude Code : `curl -fsSL https://claude.ai/install.sh | bash`, puis `claude` une fois dans un terminal pour se connecter.
+3. Homebrew (https://brew.sh) — le kit l'utilise pour installer `tmux` et `fzf`.
 
 ## Installation (5 min)
 ```
-unzip claude-kit.zip && cd claude-kit && zsh install.sh
+cd claude-kit && zsh install.sh
 ```
-Ouvrir un nouveau terminal : `cc ls` doit afficher `scratch`.
+Puis, vous-même (l'installeur vous le rappelle) :
+1. **Notes** : créer un dossier « Claude » et y mettre la note du jour. `cc` ne lit que ce dossier.
+2. **Sécurité** : `python3 ~/.config/claude-launcher/merge-settings.py` (voir plus bas). Ne pas coller le fichier à la main.
+3. Ouvrir un nouveau terminal : `cc ls` doit afficher `scratch`.
+
+Tout est en zsh, le shell par défaut du Mac. Ne tapez pas `bash` : `cc` n'y existe pas.
 
 ## Premier usage
-- Dans Notes, créer une note « to dos <date du jour> » avec trois lignes : un rendez-vous (« appel X jeudi 15h »),
-  une relance (« envoyer le dossier à Y demain »), un sujet de fond (« préparer un script de 45 s sur … »).
+- Dans le dossier Notes « Claude », une note « to dos <date du jour> » avec trois lignes : un rendez-vous (« appel X
+  jeudi 15h »), une relance (« envoyer le dossier à Y demain »), un sujet de fond (« préparer un script de 45 s sur … »).
 - `cc inbox` → macOS demande les autorisations Notes, Calendrier, Rappels : accepter. Choisir le calendrier et la liste.
 - Le rendez-vous est dans l'agenda, la relance dans Rappels, le sujet est ouvert dans une session Claude.
 - `Ctrl-b d` détache la session (elle continue) ; `cc` pour y revenir.
 
-## Vos projets
-Dans chaque dossier de travail : `cd` dedans, `cc add`, puis dans la session Claude : « écris le CLAUDE.md de ce
-projet : ce que c'est, où sont les sources, les règles ». Dès lors `cc <nom>` ouvre le projet avec son contexte.
+## Écrire une ligne qui donne un résultat utilisable
+Une session autonome fait ce que dit la ligne. Règle : **un verbe, une entrée, une sortie**. « recap réunion » donne un
+résultat vague ; « écrire le récap de la réunion du 3 nov à partir de mes notes, 1 page, dans output/ » donne un
+résultat utilisable. `cc inbox` réécrit chaque ligne dans ce format et signale ce qui manque (« [entrée ?] »).
+
+## Vos projets, et vos conversations existantes
+- **Un `CLAUDE.md` par projet.** Dans chaque dossier de travail : `cd` dedans, `cc add`, puis dans la session Claude :
+  « écris le CLAUDE.md de ce projet : ce que c'est, où sont les sources, les règles ». Toute nouvelle session le lit
+  d'elle-même : le contexte n'est jamais à réexpliquer.
+- **Vos conversations Claude Code dans VS Code sont conservées** sur le disque, par dossier de projet. Pour en
+  reprendre une depuis le terminal : `cc <nom> -c` (la dernière conversation de ce dossier), ou `cd` dedans puis
+  `claude --resume` pour choisir dans la liste. Fermer VS Code ne perd rien, sauf ce qui tournait à ce moment-là :
+  laissez finir ou détachez avant de fermer.
+- Une conversation dans l'application Claude (claude.ai) et une session Claude Code sont deux choses séparées : la
+  mémoire de l'une n'est pas celle de l'autre. Côté terminal, ce sont les `CLAUDE.md` qui tiennent le contexte.
+
+## Le cockpit et la file d'attente
+- `cc cockpit` affiche `~/scratch/COCKPIT.md` : tâches par priorité (P1 d'abord), ce qui attend une réponse de vous,
+  sessions en cours, journal du jour, messages à envoyer. État d'une tâche : *à faire*, *en cours*, *à relire* (la
+  session a fini : regarder son dossier `output/`), *toi* (à faire vous-même), close.
+- `cc run` (ou `cc run P1`) met toutes les tâches ouvertes dans la file ; le runner (launchd, toutes les 60 s) en lance
+  au plus 3 à la fois, P1 d'abord, chacune comme une session `claude -p` sans surveillance, dans le dossier du projet
+  si la tâche en a un (`output/<id>/`), sinon dans un dossier de `~/scratch`. Le Mac reste éveillé 3 h.
+- `cc me <id>` marque une tâche comme vôtre (envoyer, appeler, décider) : la file ne la donne jamais à une session.
+- `cc clean` ferme les sessions terminées ; `cc reset` remet à faire les tâches dont la session a disparu.
+- Une session terminée garde un terminal ouvert dans son dossier : `cc <nom>` pour y aller, `claude -c` pour continuer
+  la conversation avec elle.
+- Suivre : `cc ls` (`*` = en cours), `tail -f ~/scratch/.queue/done/queue.log`, ou plus simple :
+  `cd ~/scratch && claude` puis « où en est la file ? ».
+
+## Depuis le téléphone
+Tout ce qui peut écrire un fichier dans `~/scratch/.queue/` donne du travail au Mac : un fichier `<nom>.task` (une
+ligne de tâche), `<nom>.cmd` (une commande `cc`, ex. `run`), ou un fichier vide `INBOX` (trier la note du jour). Avec
+l'application Claude reliée au Mac (dossiers `~/scratch` et `~/.config/claude-launcher` connectés), il suffit d'écrire
+dans la conversation « mets en file : … » ou « inbox ». Les messages préparés sont dans Rappels › Comms : à modifier et
+envoyer depuis le téléphone.
+
+## Sécurité
+Quatre couches, chacune indépendante. Rien ne part sans vous : les messages restent des brouillons, aucune session
+n'envoie, ne publie, ne pousse sur GitHub ni ne supprime.
+- **Notes** : seul le dossier « Claude » est lu (`CC_NOTES_FOLDER` dans `~/.config/claude-launcher/config.json`) ;
+  une note verrouillée n'est jamais lue ; une ligne qui commence par 🔒, `privé` ou `//` est ignorée.
+- **Disque** : la sandbox de Claude Code (Seatbelt, imposée par macOS) limite l'écriture au dossier du projet (+ journal,
+  cockpit, file) et interdit la lecture de `~/.ssh`, des trousseaux, cookies, mails, messages, fichiers `.env` et clés,
+  et toute écriture dans un dossier `raw/`. `~/Library/CloudStorage` (Dropbox, iCloud Drive…) reste lisible.
+- **Réseau** : les commandes ne joignent qu'une liste courte de domaines ; la recherche web passe par les outils de
+  Claude, limités à des sources de référence (à compléter dans `permissions.allow`).
+- **Secrets** : clés d'API dans le Trousseau macOS, pas en clair sur le disque :
+  `security add-generic-password -a "$USER" -s <service> -T /usr/bin/security -U -w` (le `-T` évite la fenêtre de mot
+  de passe à chaque lecture ; sinon cliquer « Toujours autoriser » une fois).
+
+Installer : `python3 ~/.config/claude-launcher/merge-settings.py`. Le script sauvegarde `~/.claude/settings.json`,
+refuse un fichier déjà invalide (en indiquant la ligne), garde toutes vos règles, ajoute les protections, et valide le
+résultat. Le mode des sessions autonomes est `acceptEdits` (éditions de fichiers et bash dans la sandbox : oui ; tout
+le reste : refusé plutôt que demandé). `"CC_QUEUE_PERMISSIONS": "skip"` dans `config.json` les rend entièrement libres :
+seulement avec la sandbox active.
 
 ## Chaque semaine
-`cc memo` compile le journal des sessions en point hebdomadaire ; `cc memo --message` en tire le message WhatsApp
+`cc memo` compile le journal des sessions en point hebdomadaire ; `cc memo --message` en tire le message de groupe
 (demandes nominatives et datées, copié dans le presse-papiers) et les relances à coller dans la note du jour.
 
 ## Commandes
 ```
-cc                 choisir un projet, reprendre sa session
-cc <nom> -c        reprendre la dernière conversation
-cc new <nom>       nouveau projet dans ~/scratch
-cc today           lancer les sujets de la note du jour
-cc inbox           trier la note du jour : agenda / rappels / sessions
-cc memo            point hebdomadaire ;  cc memo --message  → message WhatsApp
-cc ls / cc add     registre des projets
+cc                  choisir un projet, reprendre sa session      cc <nom> -c      reprendre la dernière conversation
+cc new <nom>        nouveau projet dans ~/scratch                cc ls / cc add   registre des projets (* = en cours)
+cc today            lancer un sujet de la note du jour           cc inbox         trier la note : agenda / rappels / sessions
+cc cockpit          la liste par priorité                        cc run [P1]      tout lancer via la file, P1 d'abord
+cc me <id>          tâche à faire soi-même                       cc clean         fermer les sessions terminées
+cc reset [id]       remettre à faire                             cc queue "…"     une tâche dans la file
+cc comms            messages préparés → Rappels « Comms »        cc memo          point hebdomadaire (--message)
+cc tri / note / evalue   optionnel : trier ou écrire des notes selon votre propre standard ($CC_KIT, un fichier .md)
 ```
-Fichiers : `~/.config/claude-launcher/` (lanceur, scripts, `projects.txt`, `ledger/`), `~/scratch/`, `~/Library/Services/`.
-Réglages VS Code recommandés : `~/.config/claude-launcher/vscode_settings_snippet.json`.
+Fichiers : `~/.config/claude-launcher/` (lanceur, scripts, `projects.txt`, `config.json`, `ledger/`), `~/scratch/`
+(projets, `COCKPIT.md`, `.cockpit/`, `.queue/`), `~/Library/Services/`.
 
 ## Si ça bloque
-Ouvrir une conversation Claude dans l'application Mac, autoriser le dossier d'accueil, et dire :
-« finis l'installation du kit Claude qui est dans ~/Téléchargements/claude-kit ».
+| Symptôme | Cause et remède |
+| --- | --- |
+| `zsh: command not found: cc` | `source ~/.config/claude-launcher/cc.zsh`, ou ouvrir un nouveau terminal (zsh, pas bash) |
+| `launchctl list \| grep cc-queue` montre `126` | un script a perdu son droit d'exécution : `chmod +x ~/.config/claude-launcher/*.zsh`, puis relancer `zsh install.sh` |
+| Claude Code : « settings.json invalid JSON » | souvent un `{ ... }` collé à la main : corriger la ligne indiquée, puis `merge-settings.py` |
+| La file se vide mais rien n'est produit | `tail ~/scratch/.queue/done/queue.log` et le `notes/run-*.log` du dossier de la tâche |
+| Fenêtre « security veut utiliser le trousseau » | cliquer « Toujours autoriser », ou recréer la clé avec `-T /usr/bin/security` |
+| Une tâche reste vague | réécrire la ligne : verbe + entrée + sortie, puis `cc reset <id>` et `cc run` |
+
+Sinon : ouvrir une conversation Claude dans l'application Mac, autoriser le dossier du kit, et dire :
+« finis l'installation du kit Claude qui est dans ~/claude-kit ».
 KIT_EOF_0
-true
 cat > "$T/install.sh" <<'KIT_EOF_1'
 #!/bin/zsh
-# Installation du kit Claude (lanceur cc, Notes → agenda/rappels/terminal, mémo, actions rapides). Idempotent.
+# Installation du kit Claude (lanceur cc, Notes → agenda/rappels/terminal, cockpit, file d'attente, mémo, actions rapides).
+# Idempotent : on peut le relancer pour mettre à jour ; vos registre, config et réglages Claude Code ne sont pas écrasés.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 L="$HOME/.config/claude-launcher"
 echo "→ lanceur dans $L"
 mkdir -p "$L/ledger"
-cp "$HERE"/launcher/{cc.zsh,notes_ideas.py,inbox.py,memo.py,cockpit.py,comms.py,accentuer.sh,launch-idea.sh,queue-runner.zsh,com.cc-queue.plist,vscode_settings_snippet.json} "$L/"
+cp "$HERE"/launcher/{cc.zsh,notes_ideas.py,inbox.py,memo.py,cockpit.py,comms.py,accentuer.sh,launch-idea.sh,queue-runner.zsh,com.cc-queue.plist,vscode_settings_snippet.json,merge-settings.py,security-settings-snippet.json,config-snippet.json} "$L/"
 [[ -f "$L/projects.txt" ]] || cp "$HERE/launcher/projects.txt" "$L/"
-chmod +x "$L"/*.sh "$L"/*.py
-echo "→ dossier scratch et modèle de projet"
-mkdir -p "$HOME/scratch/.template" "$HOME/scratch/.memo"
+[[ -f "$L/config.json" ]] || cp "$HERE/launcher/config-snippet.json" "$L/config.json"
+chmod +x "$L"/*.sh "$L"/*.py "$L"/*.zsh
+echo "→ dossier scratch, modèle de projet, cockpit"
+mkdir -p "$HOME/scratch/.template" "$HOME/scratch/.memo" "$HOME/scratch/.cockpit/import" "$HOME/scratch/.queue/done" "$HOME/scratch/.queue/running"
 cp "$HERE/template/CLAUDE.md" "$HOME/scratch/.template/CLAUDE.md"
 [[ -f "$HOME/scratch/CLAUDE.md" ]] || cp "$HERE/template/scratch-CLAUDE.md" "$HOME/scratch/CLAUDE.md"
 echo "→ actions rapides (Services)"
 mkdir -p "$HOME/Library/Services"
 cp -R "$HERE"/services/*.workflow "$HOME/Library/Services/"
 /System/Library/CoreServices/pbs -update 2>/dev/null || true
-echo "→ tmux"
+echo "→ tmux et fzf"
 [[ -f "$HOME/.tmux.conf" ]] || cp "$HERE/launcher/tmux.conf" "$HOME/.tmux.conf"
 if command -v brew >/dev/null 2>&1; then
   brew list tmux >/dev/null 2>&1 || brew install tmux
@@ -85,17 +153,23 @@ else
 fi
 echo "→ .zshrc"
 grep -q 'claude-launcher/cc.zsh' "$HOME/.zshrc" 2>/dev/null || printf '\n# Claude launcher\nsource ~/.config/claude-launcher/cc.zsh\n' >> "$HOME/.zshrc"
-if ! command -v claude >/dev/null 2>&1; then
-  echo "   Claude Code n'est pas installé : voir https://docs.claude.com/en/docs/claude-code/overview, puis lancez 'claude' une fois."
-fi
-echo
-echo "Terminé. Ouvrez un nouveau terminal puis :  cc ls"
-echo "Mode d'emploi : $HERE/README.md"
 echo "→ file d'attente (queue runner, toutes les 60 s)"
-mkdir -p "$HOME/scratch/.queue/done" "$HOME/Library/LaunchAgents"
+mkdir -p "$HOME/Library/LaunchAgents"
 sed "s|\$HOME|$HOME|g" "$L/com.cc-queue.plist" > "$HOME/Library/LaunchAgents/com.cc-queue.plist"
 launchctl unload "$HOME/Library/LaunchAgents/com.cc-queue.plist" 2>/dev/null || true
 launchctl load "$HOME/Library/LaunchAgents/com.cc-queue.plist" 2>/dev/null && echo "   queue runner chargé"
+if ! command -v claude >/dev/null 2>&1; then
+  echo
+  echo "   Claude Code n'est pas installé : curl -fsSL https://claude.ai/install.sh | bash   puis lancez 'claude' une fois."
+fi
+echo
+echo "Terminé. Trois étapes restent à faire vous-même (README, « Sécurité ») :"
+echo "  1. Notes : créer un dossier « Claude » et y mettre la note du jour — cc ne lit que ce dossier."
+echo "  2. Sandbox Claude Code (recommandé avant toute session autonome) :"
+echo "       python3 ~/.config/claude-launcher/merge-settings.py"
+echo "     (sauvegarde ~/.claude/settings.json, garde vos règles, ajoute les protections ; ne pas coller le snippet à la main)"
+echo "  3. Ouvrir un nouveau terminal :  cc ls"
+echo "Mode d'emploi : $HERE/README.md"
 KIT_EOF_1
 mkdir -p "$T/launcher"
 cat > "$T/launcher/accentuer.sh" <<'KIT_EOF_2'
@@ -129,8 +203,15 @@ cat > "$T/launcher/cc.zsh" <<'KIT_EOF_3'
 #   cc inbox           classify today's note lines → tasks launched here, events → Calendar,
 #                      reminders → Reminders; shows the plan and asks before doing anything
 #   cc inbox --auto    same, but every task goes to the queue runner (detached, autonomous) — nothing to attach
+#   cc clean           close sessions whose claude has finished (pane back to a shell)
+#   cc reset [id...]   put tasks back to « à faire » (default: running ones whose session is gone)
+#   cc me <id>...      mark tasks as yours (send, call, decide): cc run never gives them to a session
+#   cc tri <lot.md>    sort a batch of received notes with your writing kit (optional, see CC_KIT) → ~/scratch/.tri/
+#   cc note "sujet"    open a session that writes a note to your writing kit's standard (optional, see CC_KIT)
+#   cc evalue <note.md> score a note /10 against your writing kit, three corrections (optional, see CC_KIT)
 #   cc run [P1]        launch every open cockpit task (optionally only P1) through the queue, detached
 #   cc cockpit         rebuild and show ~/scratch/COCKPIT.md (tasks, sessions, journal, queue)
+#   cc comms [sync|list|suggest|done <id>]   the comms bank → Reminders list "Comms" (edit, copy, send from phone or Mac)
 #   cc memo            draft this week's group memo from the ledger + project logs + git, opens it
 #   cc queue "text"    drop a task for the queue runner (runs within a minute, detached) — same as from the phone
 #   cc idea --notes    list note titles, to find the right one
@@ -143,6 +224,8 @@ CC_MEMO_PY="${CC_MEMO_PY:-$HOME/.config/claude-launcher/memo.py}"
 CC_COCKPIT_PY="${CC_COCKPIT_PY:-$HOME/.config/claude-launcher/cockpit.py}"
 CC_SCRATCH="${CC_SCRATCH:-$HOME/scratch}"
 CC_TEMPLATE="${CC_TEMPLATE:-$CC_SCRATCH/.template}"
+# CC_KIT: optional markdown file holding your house standard for notes (structure, grid, rules) used by cc tri/note/evalue
+CC_KIT="${CC_KIT:-$HOME/.config/claude-launcher/kit/writing-kit.md}"
 
 _cc_entries() { grep -v '^[[:space:]]*#' "$CC_REGISTRY" | grep -v '^[[:space:]]*$'; }
 _cc_names()   { _cc_entries | cut -f1; }
@@ -177,8 +260,10 @@ _cc_launch() {
   fi
   local sess; sess=$(_cc_session_name "$dir")
   if ! tmux has-session -t "=$sess" 2>/dev/null; then
-    tmux new-session -d -s "$sess" -c "$dir"
-    tmux send-keys -t "=$sess" "claude $*" Enter
+    # claude is the session's own command (typing it into a fresh shell can be lost while the shell starts);
+    # when claude exits, a shell stays open in the folder. Arguments arrive already quoted by the caller.
+    local cl="${commands[claude]:-claude}"
+    tmux new-session -d -s "$sess" -c "$dir" "${(qq)cl} $*; exec ${SHELL:-/bin/zsh} -l"
   fi
   if [[ -n "$CC_NO_ATTACH" ]]; then echo "started: $sess"; return; fi   # batch mode (cc inbox / cc today with several lines)
   if [[ -n "$TMUX" ]]; then tmux switch-client -t "=$sess"; else tmux attach-session -t "=$sess"; fi
@@ -306,9 +391,17 @@ cc() {
       for line in "${(@f)$(python3 "$CC_COCKPIT_PY" next ${p:+--p $p})}"; do
         [[ -z "$line" ]] && continue
         tid="${line%%$'\t'*}"; text="${line##*$'\t'}"
-        printf '%s\n' "$text" > "$CC_SCRATCH/.queue/$tid.task"; python3 "$CC_COCKPIT_PY" start "$tid" --session queued; n=$((n+1))
+        printf '%s\n' "$text" > "$CC_SCRATCH/.queue/$tid.task"; n=$((n+1))
       done
-      python3 "$CC_COCKPIT_PY" refresh >/dev/null; echo "queued $n task(s); the runner starts them within a minute" ;;
+      python3 "$CC_COCKPIT_PY" refresh >/dev/null
+      if (( n > 0 )); then
+        # keep the Mac awake for 3 h so the queue runner can work through the list while you are away
+        command -v caffeinate >/dev/null && { caffeinate -dims -t 10800 >/dev/null 2>&1 &! ; echo "(Mac kept awake for 3 h)"; }
+        launchctl list 2>/dev/null | grep -q cc-queue || echo "WARNING: the queue runner is not loaded — run: zsh ~/.config/claude-launcher/install-services.sh"
+      fi
+      echo "queued $n task(s) in priority order; the runner starts up to $(python3 -c 'import json;print(json.load(open("'"$HOME"'/.config/claude-launcher/config.json")).get("CC_QUEUE_MAX_RUN",3))' 2>/dev/null || echo 3) at a time, P1 first" ;;
+    comms)
+      shift; python3 "$HOME/.config/claude-launcher/comms.py" "${@:-sync}" ;;
     cockpit)
       python3 "$CC_COCKPIT_PY" refresh >/dev/null; cat "$CC_SCRATCH/COCKPIT.md" ;;
     memo)
@@ -317,10 +410,43 @@ cc() {
       shift; mkdir -p "$CC_SCRATCH/.queue"
       [[ "$1" == "inbox" ]] && { touch "$CC_SCRATCH/.queue/INBOX"; echo "queued: inbox"; return; }
       print -r -- "$*" > "$CC_SCRATCH/.queue/$(date +%s).task"; echo "queued: $*" ;;
+    tri)
+      [[ -r "$CC_KIT" ]] || { echo "cc: no writing kit at $CC_KIT (put your standard there, or export CC_KIT=...)" >&2; return 1; }
+      # cc tri <fichier-du-lot> [actualité]  — tri d'un lot de notes selon votre kit d'écriture ($CC_KIT)
+      shift; local lot="$1"; [[ -r "$lot" ]] || { echo "usage: cc tri <fichier contenant les notes du lot> [actualité]" >&2; return 1; }
+      shift; local actu="$*"; mkdir -p "$CC_SCRATCH/.tri"
+      local out="$CC_SCRATCH/.tri/tri-$(date +%F).md"
+      { cat "$CC_KIT"; echo; echo "## Lot du $(date +%F)"; [[ -n "$actu" ]] && echo "actualité : $actu"; echo; cat "$lot"; } \
+        | claude -p "Tu es l'assistant du module 1 (tri des notes). Applique la commande « tri » au lot ci-dessous : sections 1, 2 et 6, puis « transmission » (section 4). Le registre des destinataires est l'annexe C ; s'il dit « À compléter », écris « destinataire à choisir ». Réponds en markdown, sans préambule." > "$out"
+      echo "tri écrit dans $out"; ${PAGER:-less} "$out" ;;
+    note)
+      [[ -r "$CC_KIT" ]] || { echo "cc: no writing kit at $CC_KIT (put your standard there, or export CC_KIT=...)" >&2; return 1; }
+      # cc note "sujet, destinataire"  — module 2 du kit: une session qui rédige une note percutante
+      shift; [[ -z "$*" ]] && { echo 'usage: cc note "sujet, destinataire (rôle), format"' >&2; return 1; }
+      _cc_from_text "" "[note] Rédiger une note percutante : $* — suivre le module 2 (« rédige ») du kit $CC_KIT, écrire la note dans output/note.md, terminer par l'auto-évaluation /10" ;;
+    evalue)
+      [[ -r "$CC_KIT" ]] || { echo "cc: no writing kit at $CC_KIT (put your standard there, or export CC_KIT=...)" >&2; return 1; }
+      # cc evalue <fichier.md>  — module 2 « évalue »: grille /10 et trois corrections, sans réécrire
+      shift; [[ -r "$1" ]] || { echo "usage: cc evalue <note.md>" >&2; return 1; }
+      { cat "$CC_KIT"; echo; echo "## Note à évaluer"; echo; cat "$1"; } \
+        | claude -p "Applique la commande « évalue » du module 2 à la note ci-dessous : tableau critère/note/phrase/reformulation, score sur 10 et verdict, trois corrections prioritaires. Ne réécris pas la note. Markdown, sans préambule." ;;
+    clean)
+      # close the tmux sessions whose claude has ended (the pane is back to a shell); running ones are kept
+      local s c k=0
+      tmux list-panes -a -F '#{session_name} #{pane_current_command}' 2>/dev/null | while read -r s c; do
+        case "$c" in zsh|-zsh|bash|-bash|sh) tmux kill-session -t "=$s" && echo "closed $s" && k=$((k+1)) ;; esac
+      done
+      python3 "$CC_COCKPIT_PY" refresh >/dev/null ;;
+    reset)
+      # cc reset [id...]: back to « à faire » (default: tasks marked running/à relire whose session is gone)
+      shift; python3 "$CC_COCKPIT_PY" reset "$@"; python3 "$CC_COCKPIT_PY" refresh >/dev/null ;;
+    me)
+      # cc me <id>...: tasks only you can do (send, call, decide) — cc run and the runner skip them
+      shift; python3 "$CC_COCKPIT_PY" me "$@"; python3 "$CC_COCKPIT_PY" refresh >/dev/null ;;
     kill)
       local d; d=$(_cc_path_for "$2") || { echo "cc: unknown project '$2'" >&2; return 1; }
       tmux kill-session -t "=$(_cc_session_name "$d")" ;;
-    help|-h|--help) sed -n '2,25p' "${(%):-%x}" ;;
+    help|-h|--help) sed -n '2,34p' "${(%):-%x}" ;;
     *)
       local d; d=$(_cc_path_for "$cmd") || { echo "cc: unknown project '$cmd' (try: cc ls)" >&2; return 1; }
       shift; _cc_launch "$d" "$@" ;;
@@ -329,7 +455,7 @@ cc() {
 
 # tab completion for project names
 if (( $+functions[compdef] )); then
-  _cc() { local -a names; names=(new idea today inbox run cockpit memo queue add ls kill x "${(@f)$(_cc_names)}"); _describe 'project' names; }
+  _cc() { local -a names; names=(new idea today inbox run cockpit comms memo queue add ls kill x "${(@f)$(_cc_names)}"); _describe 'project' names; }
   compdef _cc cc
 fi
 KIT_EOF_3
@@ -340,7 +466,11 @@ cat > "$T/launcher/cockpit.py" <<'KIT_EOF_4'
 
   cockpit.py add  --p P1|P2|P3 --text "..." [--project NAME] [--link URL] [--source inbox]   add a task
   cockpit.py start  <id> [--session NAME]      mark running (done by cc / queue runner)
-  cockpit.py done   <id> [--note "..."]        mark done
+  cockpit.py done   <id> [--note "..."]        mark done (the session calls this when it delivers)
+  cockpit.py review <id> [--note "..."]        session ended without `done`: output to check (queue runner)
+  cockpit.py reset  [id...]                    back to todo (default: running/review tasks whose session is gone)
+  cockpit.py me     <id>...                    yours only (send, call, decide): `next` / `cc run` skip it
+  cockpit.py field  <id> <key>                 print one field
   cockpit.py wait   --text "..."               add an item to "En attente de toi"
   cockpit.py unwait <id>
   cockpit.py refresh                           rebuild COCKPIT.md from tasks + tmux + ledger + queue log
@@ -408,9 +538,62 @@ def queue_today():
         return []
 
 
+def import_drops(st):
+    """Merge ~/scratch/.cockpit/import/*.json (written from chat): {"tasks":[..],"waiting":[..],"messages":[..]}.
+    Idempotent: items whose id already exists are skipped. Processed files move to import/done/. Messages go to comms.json."""
+    imp = f"{DIR}/import"
+    files = sorted(glob.glob(f"{imp}/*.json"))
+    if not files:
+        return 0
+    os.makedirs(f"{imp}/done", exist_ok=True)
+    ids = {t["id"] for t in st["tasks"]} | {w["id"] for w in st["waiting"]}
+    n = 0
+    for f in files:
+        try:
+            d = json.load(open(f, encoding="utf-8"))
+        except Exception:
+            continue
+        for t in d.get("tasks", []):
+            if t.get("id") in ids or not t.get("text"):
+                continue
+            t.setdefault("status", "todo"); t.setdefault("p", "P2"); t.setdefault("added", now()); t.setdefault("source", "import")
+            st["tasks"].append(t); ids.add(t["id"]); n += 1
+        for w in d.get("waiting", []):
+            if w.get("id") in ids or not w.get("text"):
+                continue
+            w.setdefault("added", now()); st["waiting"].append(w); ids.add(w["id"]); n += 1
+        if d.get("unwait"):
+            st["waiting"] = [w for w in st["waiting"] if w["id"] not in set(d["unwait"])]; n += 1
+        for b in d.get("bump", []) + d.get("set", []):
+            for t in st["tasks"]:
+                if t["id"] == b.get("id"):
+                    for k in ("p", "text", "who", "status", "project", "link", "dirs"):
+                        if k in b and (k != "p" or b[k] in PRIO):
+                            t[k] = b[k]
+                    n += 1
+        if d.get("messages"):
+            cpath = f"{DIR}/comms.json"
+            try:
+                bank = json.load(open(cpath, encoding="utf-8"))
+            except Exception:
+                bank = {"messages": []}
+            have = {m["id"] for m in bank["messages"]}
+            for m in d["messages"]:
+                if m.get("id") in have:
+                    continue
+                m.setdefault("status", "draft"); m.setdefault("added", now()); m.setdefault("p", "P2")
+                bank["messages"].append(m); have.add(m["id"]); n += 1
+            json.dump(bank, open(cpath, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+        os.replace(f, f"{imp}/done/{os.path.basename(f)}")
+    if n:
+        save(st)
+    return n
+
+
 def refresh(st):
-    opn = sorted([t for t in st["tasks"] if t["status"] in ("todo", "running")],
-                 key=lambda t: (PRIO.get(t["p"], 9), t["added"]))
+    import_drops(st)
+    opn = sorted([t for t in st["tasks"] if t["status"] in ("todo", "running", "review")],
+                 key=lambda t: (PRIO.get(t["p"], 9), t.get("who") != "me", t["added"]))
     done = [t for t in st["tasks"] if t["status"] == "done" and t.get("done_at", "").startswith(dt.date.today().isoformat())]
     sess = tmux_sessions()
     L = [f"# COCKPIT — {now()}", "",
@@ -419,7 +602,14 @@ def refresh(st):
          "| id | P | Quoi | État | Projet / lien |", "| --- | --- | --- | --- | --- |"]
     for t in opn:
         link = t.get("link") or t.get("project") or ""
-        L.append(f"| {t['id']} | {t['p']} | {t['text']} | {t['status']}{' (' + t.get('session','') + ')' if t.get('session') else ''} | {link} |")
+        state = {"todo": "à faire", "running": "en cours", "review": "à relire"}.get(t["status"], t["status"])
+        if t.get("who") == "me" and t["status"] == "todo":
+            state = "toi"
+        if t.get("session") and t["status"] in ("running", "review"):
+            state += f" ({t['session']})"
+        if t["status"] == "review" and t.get("note"):
+            state += f" — {t['note']}"
+        L.append(f"| {t['id']} | {t['p']} | {t['text']} | {state} | {link} |")
     L += ["", "## En attente de toi", ""]
     for w in st["waiting"]:
         L.append(f"- [ ] ({w['id']}) {w['text']}")
@@ -429,6 +619,18 @@ def refresh(st):
     L += ["", "## Terminé aujourd'hui (journal des sessions)", ""] + (ledger_today() or ["- (rien encore)"])
     L += ["", "## Tâches closes aujourd'hui", ""] + ([f"- {t['text']} ({t.get('note','')})" for t in done] or ["- (rien encore)"])
     L += ["", "## File d'attente (queue runner)", ""] + ([f"- {q}" for q in queue_today()] or ["- (rien)"])
+    # comms bank + who to contact
+    try:
+        bank = json.load(open(f"{DIR}/comms.json"))["messages"]
+        pend = sorted([m for m in bank if m["status"] != "sent"], key=lambda m: (PRIO.get(m["p"], 9), m.get("added", "")))
+        L += ["", "## Messages à envoyer (banque de comms, dans Rappels « Comms »)", ""] + ([f"- {m['p']} · {m['via']} · {m['to']} — {m['subject']}" for m in pend] or ["- (rien)"])
+    except Exception:
+        pass
+    try:
+        r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "comms.py"), "suggest"], capture_output=True, text=True)
+        L += ["", "## Qui contacter, d'après les tâches ouvertes", ""] + (r.stdout.strip().splitlines() or ["- (rien)"])
+    except Exception:
+        pass
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     open(OUT, "w", encoding="utf-8").write("\n".join(L) + "\n")
     return OUT
@@ -452,7 +654,7 @@ def main():
         st["tasks"].append(t); save(st); print(t["id"])
     elif cmd == "start":
         for t in st["tasks"]:
-            if t["id"] == a[1]:
+            if t["id"] == a[1] and t["status"] != "done":
                 t["status"] = "running"; t["session"] = arg(a, "--session", ""); t["started"] = now()
         save(st)
     elif cmd == "done":
@@ -460,6 +662,33 @@ def main():
             if t["id"] == a[1]:
                 t["status"] = "done"; t["done_at"] = now(); t["note"] = arg(a, "--note", "")
         save(st)
+    elif cmd == "review":
+        # the session ended without calling `done`: its output needs your eyes
+        for t in st["tasks"]:
+            if t["id"] == a[1] and t["status"] != "done":
+                t["status"] = "review"; t["ended"] = now(); t["note"] = arg(a, "--note", "")
+        save(st)
+    elif cmd == "reset":
+        # reset [id...]: back to "todo" (default: every running/review task whose session is gone)
+        alive = {n for n, _ in tmux_sessions()}
+        ids = set(a[1:])
+        k = 0
+        for t in st["tasks"]:
+            if (t["id"] in ids) or (not ids and t["status"] in ("running", "review") and t.get("session") not in alive):
+                t["status"] = "todo"; t.pop("session", None); k += 1
+        save(st); print(f"{k} task(s) back to todo")
+    elif cmd == "me":
+        # me <id>...: tasks only you can do (send, call, decide); never given to a session
+        for t in st["tasks"]:
+            if t["id"] in a[1:]:
+                t["who"] = "me"
+        save(st)
+    elif cmd == "field":
+        # field <id> <key>: print one field (used by the queue runner)
+        for t in st["tasks"]:
+            if t["id"] == a[1]:
+                print(t.get(a[2]) or ""); break
+        return
     elif cmd == "wait":
         w = {"id": uuid.uuid4().hex[:6], "text": arg(a, "--text", ""), "added": now()}
         st["waiting"].append(w); save(st); print(w["id"])
@@ -467,9 +696,18 @@ def main():
         st["waiting"] = [w for w in st["waiting"] if w["id"] != a[1]]; save(st)
     elif cmd == "next":
         p = arg(a, "--p")
-        for t in sorted([t for t in st["tasks"] if t["status"] == "todo" and (not p or t["p"] == p)],
+        for t in sorted([t for t in st["tasks"] if t["status"] == "todo" and t.get("who") != "me" and (not p or t["p"] == p)],
                         key=lambda t: (PRIO.get(t["p"], 9), t["added"])):
             print(f"{t['id']}\t{t['p']}\t{t['text']}")
+        return
+    elif cmd == "order":
+        # order <file>...  → the same files, sorted by the priority of the cockpit id in their name (unknown → P2), then by name
+        pr = {t["id"]: PRIO.get(t["p"], 1) for t in st["tasks"]}
+        def key(f):
+            b = os.path.basename(f).split(".")[0]
+            return (pr.get(b, 1), b)
+        for f in sorted(a[1:], key=key):
+            print(f)
         return
     elif cmd == "json":
         print(json.dumps(st, indent=1, ensure_ascii=False)); return
@@ -489,7 +727,7 @@ cat > "$T/launcher/com.cc-queue.plist" <<'KIT_EOF_5'
 <dict>
   <key>Label</key><string>com.cc-queue</string>
   <key>ProgramArguments</key>
-  <array><string>/bin/zsh</string><string>-lc</string><string>$HOME/.config/claude-launcher/queue-runner.zsh</string></array>
+  <array><string>/bin/zsh</string><string>-lc</string><string>zsh "$HOME/.config/claude-launcher/queue-runner.zsh"</string></array>
   <key>StartInterval</key><integer>60</integer>
   <key>RunAtLoad</key><true/>
   <key>StandardErrorPath</key><string>/tmp/cc-queue.err</string>
@@ -502,7 +740,7 @@ cat > "$T/launcher/comms.py" <<'KIT_EOF_6'
 """comms.py — the comms bank: messages to send, as Apple Reminders you can edit and copy from phone or Mac.
 
   comms.py sync        push ~/scratch/.cockpit/comms.json into the Reminders list "Comms" (new items only; existing kept)
-  comms.py add --p P1 --to "Nom" --via whatsapp|email|slack --subject "..." --body "..." [--topic grievances]
+  comms.py add --p P1 --to "Nom" --via whatsapp|email|slack --subject "..." --body "..." [--topic projet-x]
   comms.py done <id>   mark sent (completes the reminder, keeps the record)
   comms.py suggest     who to contact this week, from open cockpit tasks × contacts.json
   comms.py list
@@ -643,7 +881,15 @@ if __name__ == "__main__":
     main()
 KIT_EOF_6
 mkdir -p "$T/launcher"
-cat > "$T/launcher/inbox.py" <<'KIT_EOF_7'
+cat > "$T/launcher/config-snippet.json" <<'KIT_EOF_7'
+{
+ "CC_NOTES_FOLDER": "Claude",
+ "CC_QUEUE_MAX_RUN": 3,
+ "CC_QUEUE_PERMISSIONS": "acceptEdits"
+}
+KIT_EOF_7
+mkdir -p "$T/launcher"
+cat > "$T/launcher/inbox.py" <<'KIT_EOF_8'
 #!/usr/bin/env python3
 """cc inbox — route today's Apple Notes to-dos to terminal / Calendar / Reminders.
 
@@ -708,6 +954,10 @@ For each line, output one JSON object:
   "minutes":  event duration (default 30 for a call, 60 for a meeting)
   "notes":    anything else from the line worth keeping (or "")
   "p":        "P1" | "P2" | "P3"  (P1 = blocks someone else or a deadline this week; P2 = this week; P3 = later)
+  "kind":     for tasks only: "note" (a policy note, brief or talking points), "riposte" (a rebuttal of someone else's claim), "other"
+  "task":     for tasks only: the line rewritten as an operational instruction — verb + input + output
+              (e.g. "Écrire le récap de la réunion du 3 nov à partir de mes notes, 1 page, dans output/").
+              Keep the author's words; if the input or the output is not in the line, write "[entrée ?]" / "[sortie ?]" in its place.
 
 Rules:
 - event = something at a time with other people or a fixed slot (call, meeting, réunion, RDV, demo, visio, déjeuner).
@@ -909,6 +1159,15 @@ def run(auto_yes=False, title=None):
                         except SystemExit:
                             pass
                 # record in the cockpit; the zsh wrapper launches (or queues) and marks the line ✅
+                # Operational rewrite (verb + input + output) and kind tag go AFTER the dictated line,
+                # so the zsh wrapper can still tick the original line in the note (it marks text before the first " — ").
+                kind = it.get("kind") or "other"
+                tag = {"note": "[note] ", "riposte": "[riposte] "}.get(kind, "")
+                op = (it.get("task") or "").strip()
+                if op and op != it["line"]:
+                    text = it["line"] + " — ⇒ " + tag + op + (text[len(it["line"]):] if text.startswith(it["line"]) else "")
+                elif tag:
+                    text = it["line"] + " — ⇒ " + tag.strip() + (text[len(it["line"]):] if text.startswith(it["line"]) else "")
                 tid = cockpit_add(it.get("p", "P2"), it["line"], "inbox")
                 tasks.append(f"{tid}\t{it.get('p','P2')}\t{text}")
         except SystemExit as e:
@@ -938,26 +1197,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-KIT_EOF_7
-mkdir -p "$T/launcher"
-cat > "$T/launcher/install-services.sh" <<'KIT_EOF_8'
-#!/bin/zsh
-# Registers the two Quick Actions (Accentuer, Launch idea) copied to ~/Library/Services, and makes scripts executable.
-set -e
-chmod +x ~/.config/claude-launcher/*.sh ~/.config/claude-launcher/*.py
-/System/Library/CoreServices/pbs -update 2>/dev/null || true
-/System/Library/CoreServices/pbs -flush 2>/dev/null || true
-echo "Quick Actions registered. Test: select text anywhere → right-click → Services → Accentuer."
-echo "Keyboard shortcut (optional): System Settings → Keyboard → Keyboard Shortcuts… → Services → Text → Accentuer."
-# keyboard shortcut ⌃⌥A for Accentuer (Services menu)
-defaults write pbs NSServicesStatus -dict-add '"(null) - Accentuer - runWorkflowAsService"' '{ key_equivalent = "^~a"; enabled_context_menu = 1; enabled_services_menu = 1; presented_at_least_once = 1; }'
-/System/Library/CoreServices/pbs -update 2>/dev/null || true
-echo "Hotkey: Ctrl+Option+A runs Accentuer on the selected text (if it doesn't take, log out/in once)."
-# queue runner: the Mac picks up tasks dropped in ~/scratch/.queue every minute (from the phone, via Claude)
-mkdir -p "$HOME/scratch/.queue/done"
-sed "s|\$HOME|$HOME|g" "$HOME/.config/claude-launcher/com.cc-queue.plist" > "$HOME/Library/LaunchAgents/com.cc-queue.plist"
-launchctl unload "$HOME/Library/LaunchAgents/com.cc-queue.plist" 2>/dev/null || true
-launchctl load "$HOME/Library/LaunchAgents/com.cc-queue.plist" && echo "Queue runner loaded (every 60 s)."
 KIT_EOF_8
 mkdir -p "$T/launcher"
 cat > "$T/launcher/launch-idea.sh" <<'KIT_EOF_9'
@@ -1197,7 +1436,65 @@ if __name__ == "__main__":
     main()
 KIT_EOF_10
 mkdir -p "$T/launcher"
-cat > "$T/launcher/notes_ideas.py" <<'KIT_EOF_11'
+cat > "$T/launcher/merge-settings.py" <<'KIT_EOF_11'
+#!/usr/bin/env python3
+"""Merge the security snippet into ~/.claude/settings.json — safely.
+
+  python3 ~/.config/claude-launcher/merge-settings.py [snippet.json]
+
+- backs up the current file to settings.json.bak-<date-time> first;
+- refuses to touch a file that is not valid JSON (it says where it breaks: fix that first);
+- deep-merges: your existing keys and rules are kept, lists are unioned, nothing of yours is replaced;
+- removes over-broad rules of earlier versions of the snippet (all of ~/Library), which also blocked
+  Dropbox and other cloud folders (~/Library/CloudStorage);
+- validates the result before writing it.
+"""
+import datetime, json, os, shutil, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SNIP = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "security-settings-snippet.json")
+DEST = os.path.expanduser("~/.claude/settings.json")
+OBSOLETE = {"Read(~/Library/**)", "~/Library"}
+
+
+def merge(a, b):
+    if isinstance(a, dict) and isinstance(b, dict):
+        out = dict(a)
+        for k, v in b.items():
+            out[k] = merge(a[k], v) if k in a else v
+        return out
+    if isinstance(a, list) and isinstance(b, list):
+        return [x for x in a if x not in OBSOLETE] + [x for x in b if x not in a]
+    return a  # a scalar you already set wins
+
+
+def main():
+    snippet = json.load(open(SNIP, encoding="utf-8"))
+    cur = {}
+    if os.path.exists(DEST):
+        txt = open(DEST, encoding="utf-8").read()
+        try:
+            cur = json.loads(txt) if txt.strip() else {}
+        except json.JSONDecodeError as e:
+            sys.exit(f"{DEST} is not valid JSON (line {e.lineno}, column {e.colno}: {e.msg}).\n"
+                     f"Fix that line first (a pasted '{{ ... }}' placeholder is the usual cause), then rerun.")
+        bak = f"{DEST}.bak-{datetime.datetime.now():%Y%m%d-%H%M%S}"
+        shutil.copy2(DEST, bak)
+        print(f"backup: {bak}")
+    new = merge(cur, snippet)
+    json.loads(json.dumps(new))
+    os.makedirs(os.path.dirname(DEST), exist_ok=True)
+    json.dump(new, open(DEST, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
+    p = new.get("permissions", {})
+    print(f"ok: {DEST} — {len(p.get('allow', []))} allow, {len(p.get('ask', []))} ask, {len(p.get('deny', []))} deny rules; "
+          f"sandbox {'on' if new.get('sandbox', {}).get('enabled') else 'off'}. Restart open Claude Code sessions.")
+
+
+if __name__ == "__main__":
+    main()
+KIT_EOF_11
+mkdir -p "$T/launcher"
+cat > "$T/launcher/notes_ideas.py" <<'KIT_EOF_12'
 #!/usr/bin/env python3
 """Bridge between Apple Notes and the cc launcher.
 
@@ -1208,15 +1505,42 @@ cat > "$T/launcher/notes_ideas.py" <<'KIT_EOF_11'
   notes_ideas.py today                          -> title of today's note, then its open to-do lines
   notes_ideas.py slug   TEXT                    -> prints a folder-safe slug for TEXT
 
-Default note title: $CC_NOTE or "Ideas". Only the note is read/written; nothing else in Notes is touched.
+Default note title: $CC_NOTE or "Ideas". Only notes in the folder CC_NOTES_FOLDER (default "Claude") are read/written;
+locked (password-protected) notes are never read; a line starting with 🔒, privé, private or // is skipped.
 """
 import html, os, re, subprocess, sys, unicodedata
 
 DONE_MARKS = ("✅", "✓", "☑", "📅", "⏰", "[x]", "[X]", "- [x]")
+PRIVATE_MARKS = ("🔒", "privé", "private", "//")  # a line starting with one of these is never read by cc nor sent to Claude
+
+
+def notes_folder():
+    """Only this Notes folder is ever read or written (config.json CC_NOTES_FOLDER, env override; default "Claude").
+    Set it to "" to allow every folder (not recommended)."""
+    if "CC_NOTES_FOLDER" in os.environ:
+        return os.environ["CC_NOTES_FOLDER"]
+    try:
+        import json
+        return json.load(open(os.path.expanduser("~/.config/claude-launcher/config.json"))).get("CC_NOTES_FOLDER", "Claude")
+    except Exception:
+        return "Claude"
+
+
+def _scope(script):
+    """`every note` → notes of the allowed folder only, never password-protected ones."""
+    f = notes_folder()
+    src = f'every note of folder "{f}"' if f else "every note"
+    out = script.replace("every note whose", src + " whose password protected is false and")
+    out = out.replace("every note)", src + " whose password protected is false)")
+    out = out.replace("name of every note", "name of (" + src + " whose password protected is false)")
+    return out
 
 
 def osascript(script, *args):
+    script = _scope(script)
     r = subprocess.run(["osascript", "-"] + list(args), input=script, text=True, capture_output=True)
+    if r.returncode != 0 and "folder" in r.stderr and notes_folder():
+        sys.exit(f"osascript failed: {r.stderr.strip()}\n→ cc only reads the Notes folder '{notes_folder()}'. Create it in Notes and move today's note there (or change CC_NOTES_FOLDER in config.json).")
     if r.returncode != 0:
         sys.exit(f"osascript failed: {r.stderr.strip()}")
     return r.stdout.rstrip("\n")
@@ -1377,7 +1701,7 @@ def open_lines(title, today_only=False, date=None):
             saw_heading = True
             in_today = any(p.search(s) for p in pats)
             continue
-        if s.startswith(DONE_MARKS):
+        if s.startswith(DONE_MARKS) or s.lower().startswith(PRIVATE_MARKS):
             continue
         all_open.append(s)
         if in_today:
@@ -1454,58 +1778,224 @@ def main():
 
 if __name__ == "__main__":
     main()
-KIT_EOF_11
+KIT_EOF_12
 mkdir -p "$T/launcher"
-cat > "$T/launcher/projects.txt" <<'KIT_EOF_12'
+cat > "$T/launcher/projects.txt" <<'KIT_EOF_13'
 # Registre des projets — une ligne par projet : <nom><TAB><chemin>
 # `cc add` enregistre le dossier courant ; `cc new <nom>` crée un projet dans ~/scratch.
 scratch	~/scratch
-KIT_EOF_12
+KIT_EOF_13
 mkdir -p "$T/launcher"
-cat > "$T/launcher/queue-runner.zsh" <<'KIT_EOF_13'
+cat > "$T/launcher/queue-runner.zsh" <<'KIT_EOF_14'
 #!/bin/zsh
-# Processes ~/scratch/.queue every minute (launchd). Lets Claude (from the phone, via the desktop app's file bridge)
-# or anything else drop work for the Mac to run:
-#   ~/scratch/.queue/<name>.task   → text = a task line: new scratch project + Claude session started in tmux (detached)
-#   ~/scratch/.queue/<name>.cmd    → text = a cc command, e.g. "riposte" or "memo --message"; run inside tmux
-#   ~/scratch/.queue/INBOX         → runs `cc inbox --yes` (no confirmation) once, then deletes the flag
-# Each file is moved to ~/scratch/.queue/done/ with a .log next to it.
+# Queue runner — launchd runs it every 60 s (com.*.cc-queue). Anything that can write a file can give the Mac work:
+#   ~/scratch/.queue/<id>.task   text = a task line → a headless Claude session in tmux (detached), see below
+#   ~/scratch/.queue/<name>.cmd  text = a cc command, e.g. "run" or "memo --message"; run once inside tmux
+#   ~/scratch/.queue/INBOX       runs the inbox sort (no confirmation) once, then deletes the flag
+# Processed files move to ~/scratch/.queue/done/; everything is logged in done/queue.log.
+#
+# Tasks:
+# - start in cockpit priority order (P1 first), at most CC_QUEUE_MAX_RUN at once (config.json, default 3);
+#   tasks marked as yours (cockpit.py me <id>) or already done are skipped;
+# - <id>.task with a 6-character cockpit id runs in the task's project folder when its project is in the registry
+#   (projects.txt), writing to output/<id>/; otherwise in a scratch folder, reused if one exists for that id;
+# - each session is `claude -p` (headless: it works end to end and exits; nothing to answer) run as the tmux session's
+#   own command — no keystrokes are typed into a shell — and writes an exit marker when it ends. The pane then stays
+#   open on a shell in that folder: attach with `cc <session>` and type `claude -c` to continue the conversation;
+# - when the session ends without having called `cockpit.py done <id>`, the task becomes « à relire » (review).
+# CC_QUEUE_PERMISSIONS: acceptEdits (default: file edits allowed, bash allowed inside the Claude Code sandbox, anything
+# else refused rather than asked) | skip (--dangerously-skip-permissions: only with the sandbox on).
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 source "$HOME/.config/claude-launcher/cc.zsh"
-Q="$HOME/scratch/.queue"; mkdir -p "$Q/done"
-log() { print -r -- "$(date '+%F %T') $*" >> "$Q/done/queue.log" }
 setopt null_glob
-for f in "$Q"/*.task; do
-  text=$(<"$f"); text="${text//$'\n'/ }"
-  [[ -z "$text" ]] && { mv "$f" "$Q/done/"; continue; }
-  n=$(python3 "$CC_NOTES_PY" slug "$text"); [[ -e "$CC_SCRATCH/$n" ]] && n="$n-$(date +%m%d-%H%M)"
-  _cc_create "$n" "$text" >/dev/null || { log "FAILED create $f"; mv "$f" "$Q/done/"; continue; }
-  tid="${$(basename "$f")%.task}"; [[ "$tid" == [0-9a-f](#c6) ]] && print -r -- "- cockpit id: $tid" >> "$CC_SCRATCH/$n/notes/log.md"
-  sess=$(_cc_session_name "$CC_SCRATCH/$n")
-  prompt="New task from my notes: ${text}. Read CLAUDE.md, rewrite the 'What this is' section in your own words, then do the work end to end without waiting for me; write results to output/, log one line in notes/log.md and one in the ledger."
-  tmux new-session -d -s "$sess" -c "$CC_SCRATCH/$n" 2>/dev/null
-  tmux send-keys -t "=$sess" "claude ${(q)prompt}" Enter
-  tid="${$(basename "$f")%.task}"
-  [[ "$tid" == [0-9a-f](#c6) ]] && python3 "$HOME/.config/claude-launcher/cockpit.py" start "$tid" --session "$sess" >/dev/null 2>&1
-  log "started session $sess from $(basename $f)"; mv "$f" "$Q/done/"
+L="$HOME/.config/claude-launcher"; CP="$L/cockpit.py"
+Q="$HOME/scratch/.queue"; mkdir -p "$Q/done" "$Q/running"
+log() { print -r -- "$(date '+%F %T') $*" >> "$Q/done/queue.log" }
+cfg() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get(sys.argv[2], sys.argv[3]))' "$L/config.json" "$1" "$2" 2>/dev/null || print -r -- "$2" }
+MAX_RUN=$(cfg CC_QUEUE_MAX_RUN 3)
+case "$(cfg CC_QUEUE_PERMISSIONS acceptEdits)" in
+  skip) PFLAG=(--dangerously-skip-permissions) ;;
+  *)    PFLAG=(--permission-mode "$(cfg CC_QUEUE_PERMISSIONS acceptEdits)") ;;
+esac
+CLAUDE_BIN=$(command -v claude) || { log "ERROR: claude not found in PATH ($PATH)"; exit 1; }
+command -v tmux >/dev/null || { log "ERROR: tmux not found"; exit 1; }
+is_id() { [[ "$1" =~ '^[0-9a-z]{6}$' ]] }
+
+# 1. reap finished sessions: exit marker written, or tmux session gone
+for m in "$Q"/running/*; do
+  [[ "$m" == *.exit || "$m" == *.dir ]] && continue
+  s="${m:t}"; tid=$(<"$m")
+  if [[ -f "$m.exit" ]] || ! tmux has-session -t "=$s" 2>/dev/null; then
+    code=$(cat "$m.exit" 2>/dev/null || print -r -- "?"); dir=$(cat "$m.dir" 2>/dev/null)
+    is_id "$tid" && python3 "$CP" review "$tid" --note "fini (code $code), voir ${dir/#$HOME/~}" >/dev/null 2>&1
+    mv "$m" "$Q/done/$s.finished"; rm -f "$m.exit" "$m.dir"
+    log "finished session $s (exit $code)"
+  fi
 done
+running=0; for m in "$Q"/running/*; do [[ "$m" == *.exit || "$m" == *.dir ]] || running=$((running+1)); done
+
+# 2. start tasks, P1 first
+for f in $(python3 "$CP" order "$Q"/*.task); do
+  if (( running >= MAX_RUN )); then
+    left=0; for x in "$Q"/*.task; do left=$((left+1)); done
+    log "waiting: $running running (max $MAX_RUN), $left queued"; break
+  fi
+  text=$(<"$f"); text="${text//$'\n'/ }"
+  [[ -z "$text" ]] && { mv "$f" "$Q/done/"; log "skipped empty ${f:t}"; continue; }
+  tid="${${f:t}%.task}"; is_id "$tid" || tid=""
+  if [[ -n "$tid" && "$(python3 "$CP" field "$tid" status)" == "done" ]]; then
+    mv "$f" "$Q/done/"; log "skipped ${f:t}: already done"; continue
+  fi
+  if [[ -n "$tid" && "$(python3 "$CP" field "$tid" who)" == "me" ]]; then
+    mv "$f" "$Q/done/"; log "skipped ${f:t}: yours to do"; continue
+  fi
+
+  # where to work: the registered project, else the scratch folder already used for this id, else a new one
+  dir=""; proj=""; out="output"
+  [[ -n "$tid" ]] && proj=$(python3 "$CP" field "$tid" project)
+  if [[ -n "$proj" ]] && d=$(_cc_path_for "$proj" 2>/dev/null) && [[ -d "$d" && "$d" != "$CC_SCRATCH" ]]; then
+    dir="$d"; out="output/$tid"
+  else
+    if [[ -n "$tid" ]]; then
+      for lg in "$CC_SCRATCH"/*/notes/log.md; do grep -q -- "- cockpit id: $tid" "$lg" && dir="${lg:h:h}"; done
+    fi
+    if [[ -z "$dir" ]]; then
+      n=$(python3 "$CC_NOTES_PY" slug "$text"); [[ -e "$CC_SCRATCH/$n" ]] && n="$n-$(date +%m%d-%H%M)"
+      _cc_create "$n" "$text" >/dev/null || { log "FAILED create for ${f:t}"; mv "$f" "$Q/done/"; continue; }
+      dir="$CC_SCRATCH/$n"
+      [[ -n "$tid" ]] && print -r -- "- cockpit id: $tid" >> "$dir/notes/log.md"
+    fi
+  fi
+  mkdir -p "$dir/notes" "$dir/$out"
+  sess=$(_cc_session_name "$dir")${tid:+-$tid}
+  tmux has-session -t "=$sess" 2>/dev/null && tmux kill-session -t "=$sess"
+
+  done_cmd=""; [[ -n "$tid" ]] && done_cmd=" When it is delivered, run: python3 ~/.config/claude-launcher/cockpit.py done $tid --note \"<one line: what you produced and where>\"."
+  prompt="Task from my cockpit${tid:+ (id $tid)}: ${text}
+
+Read CLAUDE.md first and follow its rules (raw data is read-only). Do the work end to end now, without asking me anything: I am away and cannot answer. If something is missing, make the most reasonable assumption, write it at the top of your result, and carry on. Put everything you produce in ${out}/, with a short README.md there saying what is in it and what I must check or decide. Never send a message, email or post, never push, never delete. At the end: append one line to notes/log.md, and one line to the ledger as CLAUDE.md says.${done_cmd}"
+
+  # extra folders the task may read/write (cockpit field "dirs", space-separated, ~ allowed)
+  extra=(--add-dir "$HOME/.config/claude-launcher/ledger" --add-dir "$HOME/scratch/.cockpit")
+  if [[ -n "$tid" ]]; then
+    for x in ${(z)$(python3 "$CP" field "$tid" dirs)}; do x="${x/#\~/$HOME}"; [[ -d "$x" ]] && extra+=(--add-dir "$x"); done
+  fi
+  ts=$(date +%m%d-%H%M); logf="$dir/notes/run-${tid:-task}-$ts.log"
+  print -r -- "$tid" > "$Q/running/$sess"; print -r -- "$dir" > "$Q/running/$sess.dir"
+  # the session's own command: claude headless, then an exit marker, then a shell left open in the folder
+  cmdline="${(qq)CLAUDE_BIN} -p ${(qq)prompt} ${(j: :)${(qq)PFLAG[@]}} ${(j: :)${(qq)extra[@]}} > ${(qq)logf} 2>&1; echo \$? > ${(qq)Q}/running/${(qq)sess}.exit; echo; tail -40 ${(qq)logf}; echo; echo '--- session terminée : claude -c pour continuer la conversation ---'; exec ${SHELL:-/bin/zsh} -l"
+  [[ -n "$tid" ]] && python3 "$CP" start "$tid" --session "$sess" >/dev/null 2>&1   # before launch: a fast session's `done` must win
+  if tmux new-session -d -s "$sess" -c "$dir" "$cmdline"; then
+    running=$((running+1)); log "started session $sess in ${dir/#$HOME/~} from ${f:t}"
+  else
+    rm -f "$Q/running/$sess" "$Q/running/$sess.dir"; log "FAILED tmux new-session for ${f:t}"
+    [[ -n "$tid" ]] && python3 "$CP" reset "$tid" >/dev/null 2>&1
+  fi
+  mv "$f" "$Q/done/"
+done
+
+# 3. cc commands and the inbox flag
 for f in "$Q"/*.cmd; do
-  cmd=$(<"$f"); cmd="${cmd//$'\n'/ }"
-  sess="queue-$(date +%H%M%S)"
-  tmux new-session -d -s "$sess" -c "$HOME" 2>/dev/null
-  tmux send-keys -t "=$sess" "source ~/.config/claude-launcher/cc.zsh; cc $cmd" Enter
+  cmd=$(<"$f"); cmd="${cmd//$'\n'/ }"; sess="queue-$(date +%H%M%S)"
+  tmux new-session -d -s "$sess" -c "$HOME" "source ${(qq)L}/cc.zsh; cc $cmd; exec ${SHELL:-/bin/zsh} -l"
   log "ran: cc $cmd (session $sess)"; mv "$f" "$Q/done/"
 done
 if [[ -f "$Q/INBOX" ]]; then
   rm -f "$Q/INBOX"
   out=$(python3 "$CC_INBOX_PY" run --yes 2>>"$Q/done/queue.log")
-  for t in "${(@f)out}"; do [[ -n "$t" ]] && print -r -- "$t" > "$Q/$(date +%s)-$RANDOM.task"; done
+  for t in "${(@f)out}"; do
+    [[ -z "$t" ]] && continue
+    id="${t%%$'\t'*}"; is_id "$id" || id="$(date +%s)-$RANDOM"
+    print -r -- "${t##*$'\t'}" > "$Q/$id.task"
+  done
   log "inbox processed"
 fi
-python3 "$HOME/.config/claude-launcher/cockpit.py" refresh >/dev/null 2>&1
-KIT_EOF_13
+python3 "$CP" refresh >/dev/null 2>&1
+KIT_EOF_14
 mkdir -p "$T/launcher"
-cat > "$T/launcher/tmux.conf" <<'KIT_EOF_14'
+cat > "$T/launcher/security-settings-snippet.json" <<'KIT_EOF_15'
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:fr.wikipedia.org)",
+      "WebFetch(domain:www.insee.fr)",
+      "WebFetch(domain:www.banque-france.fr)",
+      "WebFetch(domain:www.ccomptes.fr)",
+      "WebFetch(domain:www.tresor.economie.gouv.fr)",
+      "WebFetch(domain:ec.europa.eu)",
+      "WebFetch(domain:www.ofce.sciences-po.fr)",
+      "WebFetch(domain:apnews.com)",
+      "WebFetch(domain:www.reuters.com)",
+      "WebFetch(domain:www.nytimes.com)",
+      "WebFetch(domain:www.bls.gov)",
+      "WebFetch(domain:www.census.gov)",
+      "WebFetch(domain:www.nber.org)",
+      "WebFetch(domain:arxiv.org)"
+    ],
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/Library/Keychains/**)",
+      "Read(~/Library/Cookies/**)",
+      "Read(~/Library/Mail/**)",
+      "Read(~/Library/Messages/**)",
+      "Read(~/Library/Safari/**)",
+      "Read(~/Library/Application Support/Google/Chrome/**)",
+      "Read(~/Library/Group Containers/group.com.apple.notes/**)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Edit(**/raw/**)",
+      "Write(**/raw/**)",
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(git push *)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "denyRead": [
+        "~/.ssh",
+        "~/.aws",
+        "~/.gnupg",
+        "~/Library/Keychains",
+        "~/Library/Cookies",
+        "~/Library/Mail",
+        "~/Library/Messages",
+        "~/Library/Safari",
+        "~/Library/Application Support/Google/Chrome",
+        "~/Library/Group Containers/group.com.apple.notes"
+      ],
+      "allowWrite": [
+        "~/.config/claude-launcher/ledger",
+        "~/scratch/.cockpit",
+        "~/scratch/.queue"
+      ]
+    },
+    "network": {
+      "allowedDomains": [
+        "api.anthropic.com",
+        "statsig.anthropic.com",
+        "sentry.io",
+        "github.com",
+        "*.github.com",
+        "*.githubusercontent.com",
+        "pypi.org",
+        "files.pythonhosted.org",
+        "registry.npmjs.org"
+      ]
+    }
+  }
+}
+KIT_EOF_15
+mkdir -p "$T/launcher"
+cat > "$T/launcher/tmux.conf" <<'KIT_EOF_16'
 # minimal tmux config for running several Claude Code sessions
 set -g mouse on                       # click panes, scroll with trackpad
 set -g history-limit 50000
@@ -1520,9 +2010,9 @@ set -g escape-time 0
 # Prefix then ( / ) = previous / next session
 bind -n M-Left  switch-client -p      # Option+← / Option+→ cycles projects without the prefix
 bind -n M-Right switch-client -n
-KIT_EOF_14
+KIT_EOF_16
 mkdir -p "$T/launcher"
-cat > "$T/launcher/vscode_settings_snippet.json" <<'KIT_EOF_15'
+cat > "$T/launcher/vscode_settings_snippet.json" <<'KIT_EOF_17'
 {
   "// paste these keys into VS Code User settings.json (Cmd+Shift+P → 'Preferences: Open User Settings (JSON)')": "",
   "files.watcherExclude": {
@@ -1565,9 +2055,44 @@ cat > "$T/launcher/vscode_settings_snippet.json" <<'KIT_EOF_15'
   "workbench.startupEditor": "none",
   "window.restoreWindows": "none"
 }
-KIT_EOF_15
+KIT_EOF_17
+mkdir -p "$T/template"
+cat > "$T/template/CLAUDE.md" <<'KIT_EOF_18'
+# {{NAME}} (started {{DATE}})
+
+## What this is
+<!-- one or two lines: the idea, and what "done" looks like. Fill this in first message of the session if empty. -->
+
+## Layout
+- `notes/`: thinking, sources, drafts
+- `data/raw/`: inputs — read-only
+- `data/derived/`: anything computed from raw
+- `output/`: figures, tables, exports
+- `scripts/`: reusable code
+
+## Working rules
+- **Raw data is read-only.** Write derived data to `data/derived/`, results to `output/`.
+- Stack: Python (pandas/polars), LaTeX.
+- This is a scratch project: move fast, but keep a `notes/log.md` with one line per session so the thread can be picked up later.
+- If this grows into a real project, say so and it gets moved out of `~/scratch` and renamed.
+- **Ledger.** When a task is finished (a note drafted, a figure produced, an app deployed, an analysis run), append ONE line to `~/.config/claude-launcher/ledger/$(date +%G-W%V).md` in the form `- YYYY-MM-DD HH:MM | <project> | <what was done, one sentence, in French> | <links or file paths>`. Create the file if missing. This feeds the weekly memo; don't log exploration or failed attempts.
+- **Cockpit.** If this session was started from a cockpit task (the prompt gives a cockpit id, or `notes/log.md` has a line `- cockpit id: <id>`), when the work is delivered run `python3 ~/.config/claude-launcher/cockpit.py done <id> --note "<one line>"`. Autonomous sessions put their results in the output folder named in the prompt, with a README.md saying what to check.
+KIT_EOF_18
+mkdir -p "$T/template"
+cat > "$T/template/scratch-CLAUDE.md" <<'KIT_EOF_19'
+# ~/scratch — ideas and one-off experiments
+
+Each subfolder is one idea, created with `cc new <name>` from `.template/`.
+If a session starts here at the top level, ask which subfolder (or whether to create a new one) before doing anything.
+
+## Working rules
+- Raw data is read-only; derived data goes in `data/derived/`, results in `output/`.
+- Stack: Python (pandas/polars), LaTeX.
+- **Ledger.** When a task is finished (a note drafted, a figure produced, an app deployed, an analysis run), append ONE line to `~/.config/claude-launcher/ledger/$(date +%G-W%V).md` in the form `- YYYY-MM-DD HH:MM | <project> | <what was done, one sentence, in French> | <links or file paths>`. Create the file if missing. This feeds the weekly memo; don't log exploration or failed attempts.
+- **Cockpit.** If this session was started from a cockpit task (the prompt gives a cockpit id, or `notes/log.md` has a line `- cockpit id: <id>`), when the work is delivered run `python3 ~/.config/claude-launcher/cockpit.py done <id> --note "<one line>"`. Autonomous sessions put their results in the output folder named in the prompt, with a README.md saying what to check.
+KIT_EOF_19
 mkdir -p "$T/services/Accentuer.workflow/Contents"
-cat > "$T/services/Accentuer.workflow/Contents/Info.plist" <<'KIT_EOF_16'
+cat > "$T/services/Accentuer.workflow/Contents/Info.plist" <<'KIT_EOF_20'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -1594,9 +2119,9 @@ cat > "$T/services/Accentuer.workflow/Contents/Info.plist" <<'KIT_EOF_16'
 	</array>
 </dict>
 </plist>
-KIT_EOF_16
+KIT_EOF_20
 mkdir -p "$T/services/Accentuer.workflow/Contents"
-cat > "$T/services/Accentuer.workflow/Contents/document.wflow" <<'KIT_EOF_17'
+cat > "$T/services/Accentuer.workflow/Contents/document.wflow" <<'KIT_EOF_21'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -1810,9 +2335,9 @@ cat > "$T/services/Accentuer.workflow/Contents/document.wflow" <<'KIT_EOF_17'
 	</dict>
 </dict>
 </plist>
-KIT_EOF_17
+KIT_EOF_21
 mkdir -p "$T/services/Launch idea.workflow/Contents"
-cat > "$T/services/Launch idea.workflow/Contents/Info.plist" <<'KIT_EOF_18'
+cat > "$T/services/Launch idea.workflow/Contents/Info.plist" <<'KIT_EOF_22'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -1835,9 +2360,9 @@ cat > "$T/services/Launch idea.workflow/Contents/Info.plist" <<'KIT_EOF_18'
 	</array>
 </dict>
 </plist>
-KIT_EOF_18
+KIT_EOF_22
 mkdir -p "$T/services/Launch idea.workflow/Contents"
-cat > "$T/services/Launch idea.workflow/Contents/document.wflow" <<'KIT_EOF_19'
+cat > "$T/services/Launch idea.workflow/Contents/document.wflow" <<'KIT_EOF_23'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -2047,44 +2572,7 @@ cat > "$T/services/Launch idea.workflow/Contents/document.wflow" <<'KIT_EOF_19'
 	</dict>
 </dict>
 </plist>
-KIT_EOF_19
-mkdir -p "$T/template"
-cat > "$T/template/CLAUDE.md" <<'KIT_EOF_20'
-# {{NAME}} (started {{DATE}})
-
-## What this is
-<!-- one or two lines: the idea, and what "done" looks like. Fill this in first message of the session if empty. -->
-
-## Layout
-- `notes/`: thinking, sources, drafts
-- `data/raw/`: inputs — read-only
-- `data/derived/`: anything computed from raw
-- `output/`: figures, tables, exports
-- `scripts/`: reusable code
-
-## Working rules
-- **Raw data is read-only.** Write derived data to `data/derived/`, results to `output/`.
-- Stack: Python (pandas/polars), LaTeX.
-- This is a scratch project: move fast, but keep a `notes/log.md` with one line per session so the thread can be picked up later.
-- If this grows into a real project, say so and it gets moved out of `~/scratch` and renamed.
-- **Ledger.** When a task is finished (a note drafted, a figure produced, an app deployed, an analysis run), append ONE line to `~/.config/claude-launcher/ledger/$(date +%G-W%V).md` in the form `- YYYY-MM-DD HH:MM | <project> | <what was done, one sentence, in French> | <links or file paths>`. Create the file if missing. This feeds the weekly memo; don't log exploration or failed attempts.
-- **Cockpit.** If this session was started from a cockpit task (the prompt starts with "New task from my notes"), when the work is delivered run `python3 ~/.config/claude-launcher/cockpit.py done <id> --note "<one line>"` where `<id>` is the 6-character id in `notes/log.md` if present; if no id is there, skip this step.
-KIT_EOF_20
-mkdir -p "$T/template"
-cat > "$T/template/scratch-CLAUDE.md" <<'KIT_EOF_21'
-# ~/scratch — ideas and one-off experiments
-
-Each subfolder is one idea, created with `cc new <name>` from `.template/`.
-If a session starts here at the top level, ask which subfolder (or whether to create a new one) before doing anything.
-
-## Working rules
-- Raw data is read-only; derived data goes in `data/derived/`, results in `output/`.
-- Stack: Python (pandas/polars), LaTeX.
-- **Ledger.** When a task is finished (a note drafted, a figure produced, an app deployed, an analysis run), append ONE line to `~/.config/claude-launcher/ledger/$(date +%G-W%V).md` in the form `- YYYY-MM-DD HH:MM | <project> | <what was done, one sentence, in French> | <links or file paths>`. Create the file if missing. This feeds the weekly memo; don't log exploration or failed attempts.
-- **Cockpit.** If this session was started from a cockpit task (the prompt starts with "New task from my notes"), when the work is delivered run `python3 ~/.config/claude-launcher/cockpit.py done <id> --note "<one line>"` where `<id>` is the 6-character id in `notes/log.md` if present; if no id is there, skip this step.
-KIT_EOF_21
-chmod +x "$T/install.sh" "$T"/launcher/*.sh "$T"/launcher/*.py "$T"/launcher/*.zsh 2>/dev/null || true
-echo "→ running install.sh"
+KIT_EOF_23
+chmod +x "$T/install.sh"
+echo "→ 24 files written; running the installer"
 zsh "$T/install.sh"
-echo
-echo "Done. Open a new terminal window and type:  cc ls"
