@@ -132,7 +132,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 L="$HOME/.config/claude-launcher"
 echo "→ lanceur dans $L"
 mkdir -p "$L/ledger"
-cp "$HERE"/launcher/{cc.zsh,notes_ideas.py,inbox.py,memo.py,cockpit.py,comms.py,accentuer.sh,launch-idea.sh,queue-runner.zsh,com.cc-queue.plist,vscode_settings_snippet.json,merge-settings.py,security-settings-snippet.json,config-snippet.json} "$L/"
+cp "$HERE"/launcher/{cc.zsh,notes_ideas.py,inbox.py,memo.py,cockpit.py,comms.py,done-sync.py,accentuer.sh,launch-idea.sh,queue-runner.zsh,com.cc-queue.plist,vscode_settings_snippet.json,merge-settings.py,security-settings-snippet.json,config-snippet.json} "$L/"
 [[ -f "$L/projects.txt" ]] || cp "$HERE/launcher/projects.txt" "$L/"
 [[ -f "$L/config.json" ]] || cp "$HERE/launcher/config-snippet.json" "$L/config.json"
 chmod +x "$L"/*.sh "$L"/*.py "$L"/*.zsh
@@ -832,7 +832,7 @@ def add(a):
         return a[a.index(k) + 1] if k in a else d
     bank = load(COMMS, {"messages": []})
     m = {"id": uuid.uuid4().hex[:6], "p": arg("--p", "P2"), "to": arg("--to", "?"), "via": arg("--via", "whatsapp"),
-         "subject": arg("--subject", ""), "body": arg("--body", ""), "topic": arg("--topic"), "status": "draft",
+         "subject": arg("--subject", ""), "body": arg("--body", ""), "topic": arg("--topic"), "task": arg("--task"), "note_line": arg("--note-line"), "status": "draft",
          "added": dt.datetime.now().strftime("%Y-%m-%d %H:%M")}
     bank["messages"].append(m); save(COMMS, bank); print(m["id"])
 
@@ -895,6 +895,146 @@ cat > "$T/launcher/config-snippet.json" <<'KIT_EOF_7'
 }
 KIT_EOF_7
 mkdir -p "$T/launcher"
+cat > "$T/launcher/done-sync.py" <<'KIT_EOF_DS'
+#!/usr/bin/env python3
+"""done-sync.py — tick a message in Reminders, and the note and the cockpit follow.
+
+  Reminders list "Comms": message ticked
+    → comms.json: message marked sent
+    → today's "To dos" note: its line gets a ✅
+    → cockpit: its task is closed, so it leaves the list and is never queued again
+
+Runs from the queue runner every 5 minutes; run it by hand with no argument, or with --dry-run to preview.
+A message is tied to its note line and task by two optional fields in comms.json: "task" (cockpit id) and
+"note_line" (the line's text; default: the task's text). A message without them is only marked sent.
+Sends nothing. Reads only the Comms list, and opens only notes whose title says "To dos".
+"""
+import datetime as dt
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+
+L = os.path.expanduser("~/.config/claude-launcher")
+sys.path.insert(0, L)
+
+
+def _config():
+    try:
+        return json.load(open(f"{L}/config.json", encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+# Which Notes folder to search: CC_TICK_NOTES_FOLDER if set ("" = any folder, titles still filtered), else CC_NOTES_FOLDER.
+if "CC_TICK_NOTES_FOLDER" in _config():
+    os.environ["CC_NOTES_FOLDER"] = _config()["CC_TICK_NOTES_FOLDER"]
+
+import comms  # noqa: E402
+import notes_ideas as notes  # noqa: E402
+
+TODO_TITLE = re.compile(r"\bto[- ]?do(['’]?s)?\b", re.I)
+LOOKBACK_DAYS = 7  # a message ticked on Thursday can still close a line in Monday's note
+
+COMPLETED = '''
+on run argv
+  tell application "Reminders"
+    if not (exists list (item 1 of argv)) then return ""
+    set ids to id of (reminders of list (item 1 of argv) whose completed is true)
+  end tell
+  set AppleScript's text item delimiters to linefeed
+  return ids as text
+end run'''
+
+
+def stamp():
+    return dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def completed_ids():
+    r = subprocess.run(["osascript", "-", comms.LIST], input=COMPLETED, text=True, capture_output=True)
+    if r.returncode != 0:
+        sys.exit(f"{stamp()} done-sync: Reminders unreadable: {r.stderr.strip()}")
+    return {x for x in r.stdout.split("\n") if x.strip()}
+
+
+def todo_titles():
+    """"To dos" notes dated in the last LOOKBACK_DAYS days, or edited today."""
+    names = [n for n in notes.osascript(notes.LIST_NOTES).split(chr(30)) if n]
+    edited = set(notes.osascript(notes.NOTES_SINCE_MIDNIGHT, "modified").split("\n"))
+    today = dt.date.today()
+    pats = [p for k in range(LOOKBACK_DAYS) for p in notes._today_patterns(today - dt.timedelta(days=k), words=False)]
+    keep = [n for n in names if TODO_TITLE.search(n) and (n in edited or any(p.search(n) for p in pats))]
+    return list(dict.fromkeys(keep))
+
+
+def tick_note(line):
+    for title in todo_titles():
+        if notes.mark(title, line):
+            return True
+    return False
+
+
+def cockpit(*args):
+    r = subprocess.run([sys.executable, f"{L}/cockpit.py", *args], text=True, capture_output=True)
+    return r.stdout.strip()
+
+
+def close_task(tid, note):
+    cockpit("done", tid, "--note", note)
+
+
+def task_line(tid):
+    return cockpit("field", tid, "text").split(" — ")[0]
+
+
+def apply_ticks(messages, ids, tick, close, line_of, say):
+    """Mark every newly ticked message; returns how many. The arguments are functions so this can be tested."""
+    n = 0
+    for m in messages:
+        if m.get("status") == "sent" or m.get("reminder_id") not in ids:
+            continue
+        m["status"] = "sent"
+        m["sent_at"] = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+        n += 1
+        name, tid = comms.title(m), m.get("task")
+        line = m.get("note_line") or (line_of(tid) if tid else "")
+        ticked = False
+        if line:
+            try:
+                ticked = tick(line)
+            except SystemExit as e:  # notes_ideas exits on an osascript error: log it, keep going
+                say(f"note not updated ({e})")
+        if tid:
+            close(tid, f"{m['to']} : message envoyé (coché dans Rappels)")
+        say(f"sent: {name} | note {'ticked' if ticked else 'unchanged'} | task {tid or 'none'}")
+    return n
+
+
+def main():
+    dry = "--dry-run" in sys.argv
+    signal.alarm(120)  # a blocked Automation prompt must not hang the queue runner
+    bank = comms.load(comms.COMMS, {"messages": []})
+    ids = completed_ids()
+
+    def say(text):
+        print(f"{stamp()} done-sync: {text}")
+
+    if dry:
+        for m in bank["messages"]:
+            if m.get("status") != "sent" and m.get("reminder_id") in ids:
+                say(f"would sync: {comms.title(m)} | task {m.get('task') or 'none'}")
+        return
+    if apply_ticks(bank["messages"], ids, tick_note, close_task, task_line, say):
+        comms.save(comms.COMMS, bank)
+        cockpit("refresh")
+
+
+if __name__ == "__main__":
+    main()
+KIT_EOF_DS
 cat > "$T/launcher/inbox.py" <<'KIT_EOF_8'
 #!/usr/bin/env python3
 """cc inbox — route today's Apple Notes to-dos to terminal / Calendar / Reminders.
@@ -1969,6 +2109,8 @@ if [[ -f "$Q/INBOX" ]]; then
   done
   log "inbox processed"
 fi
+# every 5 minutes: messages ticked in Reminders → note ✅ → cockpit task closed
+if (( 10#$(date +%M) % 5 == 0 )); then python3 "$L/done-sync.py" >> "$Q/done/queue.log" 2>&1; fi
 python3 "$CP" refresh >/dev/null 2>&1
 KIT_EOF_14
 mkdir -p "$T/launcher"

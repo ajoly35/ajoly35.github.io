@@ -15,6 +15,7 @@
 pre,code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}pre{background:#f3f1ec;border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow:auto;white-space:pre-wrap;word-break:break-word}code{background:#f3f1ec;padding:1px 4px;border-radius:4px}
 table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.95rem}td,th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-weight:600}
 button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--accent);color:#fff;border:0;border-radius:6px;padding:9px 14px;cursor:pointer}button:hover{filter:brightness(1.1)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:.4rem 0}.export p{margin:.4rem 0}.words{padding-left:1.3rem}.words li{margin:.35rem 0}#schema{margin:14px 0}
 .small{font-size:.9rem;color:var(--muted)}.box{border:1px solid var(--line);border-radius:8px;padding:14px 18px;background:#fff;margin:14px 0}
 </style>
 </head>
@@ -33,10 +34,21 @@ button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial
     </nav>
   </header>
 
-<h1>Setup: dictate, sort, execute</h1>
-<p class="lead">One note a day on the phone, one command on the Mac, and every line becomes a calendar entry, a reminder, or a Claude Code session that works while you do something else. Everything here is open: copy one script, paste it in a terminal, and you have the same setup in about ten minutes.</p>
+<h1>Setup: capture, sort, execute, close</h1>
+<p class="lead">Give it a line however you like: every line becomes a calendar entry, a reminder or a Claude Code session that works while you do something else. When you send a message and tick it, the note and the task list update themselves.</p>
 
-<div class="flow"><span>Apple Notes (dictated)</span><i>→</i><span><code>cc inbox</code> classifies</span><i>→</i><span>Calendar · Reminders</span><i>·</i><span>Claude Code sessions (tmux)</span><i>→</i><span>ledger → cockpit → weekly memo</span></div>
+<div class="box export"><p><b>Take the whole setup with you</b></p>
+<p class="btns"><button data-copy="installer">Copy the installer</button><button data-copy="prompt">Copy the setup prompt</button><button id="dl-schema">Download the schema</button></p>
+<p class="small" id="ok-top" aria-live="polite">The installer goes in Terminal. The prompt goes in Claude Code, which reads the installer and asks before running it.</p></div>
+
+<h2>Global schema</h2>
+<svg id="schema" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 716 546" role="img" aria-labelledby="schema-t schema-d" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" style="width:100%;height:auto;display:block"><title id="schema-t">Global schema of the setup</title><desc id="schema-d">A line enters the note by dictation, typing or Claude. cc inbox sorts it to Calendar, Reminders or the cockpit. Sessions do the work, log it and draft messages. You send and tick a message; the note line gets a tick and the task leaves the cockpit.</desc><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5a5a5a"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2e7d32"/></marker></defs><rect x="24" y="22" width="190" height="36" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="119.0" y="45.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Dictate</text><rect x="255" y="22" width="190" height="36" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="45.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Type</text><rect x="486" y="22" width="190" height="36" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="581.0" y="45.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Ask Claude</text><text x="350" y="13" font-size="11" fill="#5a5a5a" text-anchor="middle" letter-spacing=".06em">ANY ONE OF THESE, ALL OPTIONAL</text><path d="M119 58L232 92" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><path d="M350 58V92" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><path d="M581 58L468 92" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="180" y="94" width="340" height="40" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="111.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Apple Notes app</text><text x="350.0" y="128.0" text-anchor="middle" font-size="12" fill="#5a5a5a">one line per thing to do</text><path d="M350 134V160" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="255" y="162" width="190" height="38" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="186.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">cc inbox sorts each line</text><path d="M305 200L119 232" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><path d="M350 200V232" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><path d="M395 200L581 232" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="24" y="234" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="119.0" y="255.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Calendar</text><text x="119.0" y="272.0" text-anchor="middle" font-size="12" fill="#5a5a5a">events</text><rect x="255" y="234" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="255.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Reminders</text><text x="350.0" y="272.0" text-anchor="middle" font-size="12" fill="#5a5a5a">things to remember</text><rect x="486" y="234" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="581.0" y="255.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Cockpit</text><text x="581.0" y="272.0" text-anchor="middle" font-size="12" fill="#5a5a5a">tasks by priority</text><path d="M581 282V316" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="486" y="318" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="581.0" y="339.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Claude sessions</text><text x="581.0" y="356.0" text-anchor="middle" font-size="12" fill="#5a5a5a">3 at a time, results in output/</text><path d="M486 342H447" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="255" y="318" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="339.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Ledger</text><text x="350.0" y="356.0" text-anchor="middle" font-size="12" fill="#5a5a5a">what was done</text><path d="M255 342H216" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="24" y="318" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="119.0" y="339.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Weekly memo</text><text x="119.0" y="356.0" text-anchor="middle" font-size="12" fill="#5a5a5a">drafted for you</text><path d="M581 366V400" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="486" y="402" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="581.0" y="423.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Drafts</text><text x="581.0" y="440.0" text-anchor="middle" font-size="12" fill="#5a5a5a">in the Reminders list Comms</text><path d="M581 450V484" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="486" y="486" width="190" height="48" rx="8" fill="#7a1f2b" stroke="#7a1f2b"/><text x="581.0" y="507.0" text-anchor="middle" font-size="14" font-weight="600" fill="#ffffff">You send it and tick it</text><text x="581.0" y="524.0" text-anchor="middle" font-size="12" fill="#ffffff">the only manual step</text><path d="M486 510H8V114H178" fill="none" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#g)"/><path d="M676 510H688V258H678" fill="none" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#g)"/><text x="247" y="502" font-size="13" fill="#2e7d32" text-anchor="middle" font-weight="600">the note line gets a ✅</text><text x="0" y="0" font-size="13" fill="#2e7d32" text-anchor="middle" font-weight="600" transform="translate(711 384) rotate(-90)">the task leaves the cockpit</text></svg>
+<ol class="words">
+<li><b>Capture.</b> Dictate, type, or ask Claude. These are alternatives, so use whichever is handy: dictation is never required.</li>
+<li><b>Sort.</b> <code>cc inbox</code> sends each line to Calendar, Reminders or the cockpit.</li>
+<li><b>Execute.</b> Claude sessions work through the cockpit, log what they did and leave drafts for you.</li>
+<li><b>Close.</b> You send a draft and tick it. Within five minutes its note line gets a ✅ and its task leaves the cockpit.</li>
+</ol>
 
 <h2>What you get</h2>
 <table>
@@ -47,7 +59,7 @@ button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial
 <tr><td><code>cc todo "…"</code></td><td>add a to-do line to today's note in Apple Notes (created in the Claude folder if missing); Claude Code sessions can do it too when you ask them</td></tr>
 <tr><td><code>cc me</code> · <code>cc clean</code> · <code>cc reset</code></td><td>mark a task as yours (send, call, decide: never given to a session); close finished sessions; put a task back to “to do”</td></tr>
 <tr><td><code>cc memo</code> · <code>--message</code></td><td>compiles the week's work (session ledger, project logs, git) into a memo draft, then into a short message with named asks and deadlines</td></tr>
-<tr><td><code>cc comms</code></td><td>a bank of drafted messages pushed into a Reminders list, editable and copyable from the phone</td></tr>
+<tr><td><code>cc comms</code></td><td>a bank of drafted messages pushed into a Reminders list, editable and copyable from the phone. Tick one when it is sent: <code>done-sync.py</code> marks it sent, ticks its line in the note and closes its task, every five minutes</td></tr>
 <tr><td>Right-click → Services</td><td><b>Accentuer</b> fixes French accents in any selected text (for a US keyboard); <b>Launch idea</b> turns a selected Note line into a session</td></tr>
 </table>
 <p class="small">Each project folder carries a <code>CLAUDE.md</code> (what the project is, where raw data lives, the rules), so a session never needs the context explained twice. Raw data is treated as read-only everywhere.</p>
@@ -64,7 +76,7 @@ claude        # sign in once, then type anything to check it answers</pre>
 <p class="small">Homebrew is needed for <code>tmux</code> and <code>fzf</code>: <a href="https://brew.sh">brew.sh</a>, one command to paste.</p></div></div>
 
 <div class="step"><div class="n">2</div><div><h3>The kit, in one paste</h3>
-<p>The script below contains every file of the kit (24 files, all plain text, nothing downloaded from anywhere). It writes them to <code>~/claude-kit</code> and runs the installer: launcher, scripts, Quick Actions, tmux config, a scratch folder with a project template, and one line in your <code>.zshrc</code>. Read it first if you like; that is the point of shipping it as text.</p>
+<p>The script below contains every file of the kit (25 files, all plain text, nothing downloaded from anywhere). It writes them to <code>~/claude-kit</code> and runs the installer: launcher, scripts, Quick Actions, tmux config, a scratch folder with a project template, and one line in your <code>.zshrc</code>. Read it first if you like; that is the point of shipping it as text.</p>
 <p><button id="copy">Copy the installer</button> &nbsp; <a href="assets/claude-kit-installer.zsh" download>or download it (.zsh, 110 KB)</a> <span id="ok" class="small"></span></p>
 <p>Then in Terminal: paste, press Enter. Or, to run it straight from the clipboard:</p>
 <pre>pbpaste | zsh</pre>
@@ -82,18 +94,19 @@ cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
 <h2>The daily loop</h2>
 <table>
 <tr><th>When</th><th>What</th></tr>
-<tr><td>Anytime, phone</td><td>Dictate into today's note (Siri: “note: …”). Lines, not paragraphs: a verb, the input, the output.</td></tr>
+<tr><td>Anytime</td><td>Add lines to today's note: dictate (Siri: “note: …”), type, run <code>cc todo "…"</code>, or ask a Claude session. Lines, not paragraphs: a verb, the input, the output.</td></tr>
 <tr><td>Morning, Mac</td><td><code>cc inbox</code>. Events and reminders land, tasks go to the cockpit rewritten as verb + input + output. <code>cc me &lt;id&gt;</code> on the ones only you can do, then <code>cc run</code> and walk away.</td></tr>
 <tr><td>Back at the desk</td><td><code>cc cockpit</code>: tasks marked <i>to review</i> have their results in <code>output/</code> with a README saying what to check. <code>cc &lt;session&gt;</code> then <code>claude -c</code> to keep working with the session that did it; <code>cc clean</code> to close the rest.</td></tr>
 <tr><td>Through the day</td><td><code>cc</code> to jump into a session; <code>Option+←/→</code> between them; <code>Ctrl-b d</code> to leave everything running.</td></tr>
+<tr><td>When you send</td><td>Copy a draft from Reminders, send it yourself, tick it. The note and the cockpit follow within five minutes.</td></tr>
 <tr><td>Weekly</td><td><code>cc memo</code>, dictate what the sessions can't know, <code>cc memo --message</code>, send.</td></tr>
 </table>
 
 <h2>Security</h2>
 <table>
 <tr><th>Layer</th><th>Rule</th></tr>
-<tr><td>Notes</td><td>Only the Notes folder “Claude” is read; locked notes never; a line starting with 🔒, <code>privé</code> or <code>//</code> is skipped.</td></tr>
-<tr><td>Disk</td><td>Claude Code's sandbox (Seatbelt, enforced by macOS): sessions write only to their project folder plus the ledger, cockpit and queue; never read <code>~/.ssh</code>, keychains, cookies, mail, messages, <code>.env</code> files or keys; never write to a <code>raw/</code> folder. Cloud folders (<code>~/Library/CloudStorage</code>: Dropbox, iCloud Drive) stay readable.</td></tr>
+<tr><td>Notes</td><td>Only the Notes folder “Claude” is read; locked notes never; a line starting with 🔒, <code>privé</code> or <code>//</code> is skipped. The tick sync opens only notes whose title says “To dos”.</td></tr>
+<tr><td>Disk</td><td>Claude Code's sandbox (Seatbelt, enforced by macOS): sessions write only to their project folder plus the ledger, cockpit and queue; never read <code>~/.ssh</code>, keychains, cookies, mail, messages, <code>.env</code> files or keys; never write to a <code>raw/</code> folder. Cloud folders (<code>~/Library/CloudStorage</code>: Dropbox, iCloud Drive) can refuse sandboxed shell commands with “Operation not permitted”: test yours before you queue work that needs them.</td></tr>
 <tr><td>Network</td><td>Shell commands reach only a short list of domains; web research goes through Claude's own tools, allowed for a list of reference sources you extend.</td></tr>
 <tr><td>Secrets</td><td>API keys in the macOS Keychain: <code>security add-generic-password -a "$USER" -s &lt;name&gt; -T /usr/bin/security -U -w</code> (the <code>-T</code> spares you a password prompt on every read).</td></tr>
 <tr><td>Autonomy</td><td>Queued sessions run in <code>acceptEdits</code>: file edits and sandboxed shell commands yes, anything else refused rather than asked. They never send, post, push or delete.</td></tr>
@@ -105,6 +118,7 @@ cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
 <tr><td><code>launchctl list | grep cc-queue</code> shows <code>126</code></td><td>a script lost its execute bit: <code>chmod +x ~/.config/claude-launcher/*.zsh</code>, then rerun <code>zsh ~/claude-kit/install.sh</code></td></tr>
 <tr><td>“settings.json: invalid JSON”</td><td>usually a pasted placeholder: fix the line it names, then run <code>merge-settings.py</code></td></tr>
 <tr><td>Queue empties, nothing produced</td><td><code>tail ~/scratch/.queue/done/queue.log</code> and the <code>notes/run-*.log</code> in the task's folder</td></tr>
+<tr><td>A tick doesn't reach the note</td><td><code>python3 ~/.config/claude-launcher/done-sync.py --dry-run</code> lists what would sync; a message needs its <code>--task</code> link to close a task</td></tr>
 <tr><td>A result is vague</td><td>the task line was: rewrite it as verb + input + output, <code>cc reset &lt;id&gt;</code>, <code>cc run</code></td></tr>
 <tr><td>Not sure what's happening</td><td><code>cd ~/scratch &amp;&amp; claude</code>, then ask: “where is the queue at?”</td></tr>
 </table>
@@ -114,11 +128,33 @@ cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
 
 <h2>Credits</h2>
 <p>Built with Claude, in one morning, on top of the Claude Code setup guides at <a href="https://claudeblattman.com">Claude Blattman</a> (Chris Blattman's open resource for researchers who don't code; his <a href="https://github.com/chrisblattman/claudeblattman">starter kit</a> is a good next step: <code>/plugin marketplace add chrisblattman/claudeblattman</code>). The kit here is MIT-licensed: take it, change it, share it.</p>
-<p class="small">Page updated 4 November 2026 (afternoon: fixed queue runner, cockpit review states, security merge script). The installer is also published as a <a href="https://claude.ai/artifact/VE7eedii7adS62wUkyY8QT">single page on claude.ai</a>.</p>
+<p class="small">Page updated 4 November 2026 (evening: global schema, tick sync from Reminders to the note and the cockpit, one-click export). The installer is also published as a <a href="https://claude.ai/artifact/VE7eedii7adS62wUkyY8QT">single page on claude.ai</a>.</p>
 
 </div>
 <script>
-document.getElementById('copy').addEventListener('click',async()=>{const ok=document.getElementById('ok');try{const r=await fetch('assets/claude-kit-installer.zsh');const t=await r.text();await navigator.clipboard.writeText(t);ok.textContent='Copied — paste it in Terminal and press Enter (or: pbpaste | zsh).';}catch(e){ok.textContent='Copy failed — use the download link instead.';}});
+const SETUP_PROMPT=`Set up Adrien Joly's Claude Code kit on this Mac for me (https://ajoly35.github.io/setup.html).
+
+1. Download https://ajoly35.github.io/assets/claude-kit-installer.zsh, read it, and tell me in five lines what it will change. Wait for my OK.
+2. Run it, then run: python3 ~/.config/claude-launcher/merge-settings.py
+3. Check that it worked with cc ls, and that the queue job is loaded.
+4. Walk me through my first note: a folder named Claude in Apple Notes, then a note titled "to dos" with today's date.
+5. Stop there and tell me what I still have to do myself, such as the macOS permission prompts.
+
+Never send, post or push anything on my behalf.`;
+const say=t=>{document.getElementById('ok-top').textContent=t};
+async function installer(){const r=await fetch('assets/claude-kit-installer.zsh');if(!r.ok)throw 0;return r.text()}
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',async()=>{
+  try{
+    if(b.dataset.copy==='prompt'){await navigator.clipboard.writeText(SETUP_PROMPT);say('Copied. Paste it into Claude Code.')}
+    else{await navigator.clipboard.writeText(await installer());say('Copied. Paste it in Terminal and press Enter (or: pbpaste | zsh).')}
+  }catch(e){say('Copy failed. Use the download link in step 2.')}
+}));
+document.getElementById('dl-schema').addEventListener('click',()=>{
+  const svg=document.getElementById('schema').outerHTML;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+  a.download='setup-schema.svg';a.click();URL.revokeObjectURL(a.href);say('Schema saved as setup-schema.svg.');
+});
+document.getElementById('copy').addEventListener('click',async()=>{const ok=document.getElementById('ok');try{await navigator.clipboard.writeText(await installer());ok.textContent='Copied. Paste it in Terminal and press Enter (or: pbpaste | zsh).';}catch(e){ok.textContent='Copy failed. Use the download link instead.';}});
 </script>
 </body>
 </html>
