@@ -103,6 +103,48 @@ cc new first-idea     # un projet avec son CLAUDE.md, Claude s'y ouvre</pre>
 </table>
 
 <h2>Sécurité</h2>
+<p class="lead">La règle : <b>Claude rédige, vous envoyez.</b> Dans cette installation, Claude n'a aucune connexion à votre messagerie, à WhatsApp ni à votre agenda. Il ne peut donc envoyer aucun message à votre place, et il ne circule pas librement dans tout votre ordinateur.</p>
+<h3>Qui fait quoi</h3>
+<table>
+<tr><th>Étape</th><th>Qui</th><th>Ce qui se passe</th></tr>
+<tr><td>1. Noter</td><td>Vous</td><td>Vous ajoutez une ligne à votre note de to-dos.</td></tr>
+<tr><td>2. Trier</td><td>Votre Mac</td><td><code>cc inbox</code> classe la ligne et la place dans le cockpit.</td></tr>
+<tr><td>3. Rédiger</td><td>Claude, dans la sandbox</td><td>Une session travaille dans son dossier de projet et écrit un brouillon. Elle n'a aucun moyen de l'envoyer.</td></tr>
+<tr><td>4. Relire</td><td>Vous</td><td>Le brouillon attend dans Rappels. Vous le lisez et vous le corrigez.</td></tr>
+<tr><td>5. Envoyer</td><td>Vous</td><td>Vous le collez dans votre messagerie ou WhatsApp et vous envoyez. Claude n'intervient pas.</td></tr>
+<tr><td>6. Clore</td><td>Vous, puis votre Mac</td><td>Vous cochez le rappel. La ligne de la note reçoit sa coche et la tâche quitte le cockpit.</td></tr>
+</table>
+<h3>Ce que Claude peut atteindre, et ce qu'il ne peut pas</h3>
+<table>
+<tr><th>Domaine</th><th>Accès</th><th>Comment c'est garanti</th></tr>
+<tr><td>Mail, WhatsApp, Messages</td><td><b>Aucun</b></td><td>Aucun connecteur installé, les dossiers Mail et Messages sont bloqués, et le pilotage des autres applications (<code>osascript</code>) est bloqué.</td></tr>
+<tr><td>Agenda</td><td><b>Aucun</b>, sauf si vous le choisissez</td><td>Laissez l'agenda vide dans <code>config.json</code> : aucun événement n'est écrit.</td></tr>
+<tr><td>Écriture sur le disque</td><td>Dossier de projet seulement</td><td>La sandbox de macOS refuse tout le reste, hors journal, cockpit et file.</td></tr>
+<tr><td>Lecture sur le disque</td><td>L'essentiel de votre dossier personnel, <b>sauf</b> une liste bloquée</td><td>Clés SSH, trousseaux, cookies, mail, messages, fichiers <code>.env</code> et clés sont refusés. Ajoutez vos propres dossiers sensibles à la liste.</td></tr>
+<tr><td>Internet</td><td>Une courte liste de sites</td><td>Les commandes shell passent par un filtre. Ce qui n'est pas listé est refusé.</td></tr>
+<tr><td>Commit, push, suppression</td><td>Question d'abord</td><td>Les règles de permission s'arrêtent et demandent. Les sessions en file ont pour consigne de ne pas le faire, et tout ce qui exige une question est refusé.</td></tr>
+</table>
+<h3>Garder la sandbox, ajouter de petites exceptions</h3>
+<p>Si la sandbox vous gêne, ne la désactivez pas : les sessions en file en dépendent, et sans elle rien ne les encadrerait. Exemptez plutôt les quelques commandes sans risque dont vous avez besoin, dans <code>~/.claude/settings.json</code> :</p>
+<pre>"sandbox": {
+  "enabled": true,
+  "autoAllowBashIfSandboxed": true,
+  "excludedCommands": [
+    "pbcopy",
+    "pbpaste",
+    "open *",
+    "python3 ~/.config/claude-launcher/notes_ideas.py *"
+  ]
+}</pre>
+<p>Cela rétablit le presse-papiers, l'ouverture de fichiers et la lecture de votre note de to-dos. N'exemptez pas <code>osascript</code> : il peut piloter Mail, ce qui annulerait la première ligne du tableau ci-dessus.</p>
+<h3>Ce que cela ne protège pas</h3>
+<ul class="words">
+<li><b>Les connecteurs que vous ajoutez.</b> Si vous connectez votre messagerie à Claude, cette page ne s'applique plus. Gardez le mail et WhatsApp à l'écart.</li>
+<li><b>Vos propres autorisations.</b> Vous pouvez accepter une commande hors sandbox quand on vous le demande. Lisez la question avant d'accepter.</li>
+<li><b>La lecture.</b> La sandbox limite l'écriture bien plus que la lecture : bloquez ce que vous ne voulez pas voir lu.</li>
+<li><b>Les données sensibles.</b> Ce qu'une session lit est envoyé à Claude pour être traité. Vérifiez vos propres règles avant de l'orienter vers des données personnelles ou de recherche.</li>
+</ul>
+<h3>Le détail des niveaux</h3>
 <table>
 <tr><th>Niveau</th><th>Règle</th></tr>
 <tr><td>Notes</td><td>Seul le dossier Notes « Claude » est lu ; jamais les notes verrouillées ; une ligne commençant par 🔒, <code>privé</code> ou <code>//</code> est ignorée. La synchronisation des coches n'ouvre que les notes dont le titre contient « To dos ».</td></tr>

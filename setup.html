@@ -104,6 +104,48 @@ cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
 </table>
 
 <h2>Security</h2>
+<p class="lead">The rule: <b>Claude drafts, you send.</b> In this setup Claude has no connection to your email, WhatsApp or calendar, so it cannot send a message for you, and it cannot roam your whole computer.</p>
+<h3>Who does what</h3>
+<table>
+<tr><th>Step</th><th>Who</th><th>What happens</th></tr>
+<tr><td>1. Capture</td><td>You</td><td>You add a line to your to-do note.</td></tr>
+<tr><td>2. Sort</td><td>Your Mac</td><td><code>cc inbox</code> classifies the line and puts it in the cockpit.</td></tr>
+<tr><td>3. Draft</td><td>Claude, in the sandbox</td><td>A session works inside its project folder and writes a draft. It has no way to send it.</td></tr>
+<tr><td>4. Review</td><td>You</td><td>The draft waits in Reminders. You read it and correct it.</td></tr>
+<tr><td>5. Send</td><td>You</td><td>You paste it into your own mail or WhatsApp and press send. Claude is not involved.</td></tr>
+<tr><td>6. Close</td><td>You, then your Mac</td><td>You tick the reminder. The note line gets its tick and the task leaves the cockpit.</td></tr>
+</table>
+<h3>What Claude can and cannot reach</h3>
+<table>
+<tr><th>Area</th><th>Access</th><th>How that is enforced</th></tr>
+<tr><td>Email, WhatsApp, Messages</td><td><b>None</b></td><td>No connector is installed, the Mail and Messages folders are blocked, and scripting other apps (<code>osascript</code>) is blocked.</td></tr>
+<tr><td>Calendar</td><td><b>None</b> unless you choose it</td><td>Leave the calendar unset in <code>config.json</code> and no event is written.</td></tr>
+<tr><td>Writing to disk</td><td>Project folder only</td><td>The macOS sandbox refuses anything else, apart from the ledger, cockpit and queue.</td></tr>
+<tr><td>Reading from disk</td><td>Most of your home folder, <b>except</b> a blocked list</td><td>SSH keys, keychains, cookies, mail, messages, <code>.env</code> files and keys are refused. Add your own sensitive folders to the list.</td></tr>
+<tr><td>Internet</td><td>A short list of sites</td><td>Shell commands go through a filter. Anything not listed is refused.</td></tr>
+<tr><td>Commit, push, delete</td><td>Asked first</td><td>Permission rules stop and ask. Queued sessions are told not to, and anything that needs asking is refused.</td></tr>
+</table>
+<h3>Keep the sandbox, add small exceptions</h3>
+<p>If the sandbox gets in your way, do not turn it off: queued sessions rely on it, and without it they would run with nothing around them. Exempt the few harmless commands you need instead, in <code>~/.claude/settings.json</code>:</p>
+<pre>"sandbox": {
+  "enabled": true,
+  "autoAllowBashIfSandboxed": true,
+  "excludedCommands": [
+    "pbcopy",
+    "pbpaste",
+    "open *",
+    "python3 ~/.config/claude-launcher/notes_ideas.py *"
+  ]
+}</pre>
+<p>That restores the clipboard, opening files and reading your to-do note. Do not exempt <code>osascript</code>: it can drive Mail, and that would undo the first row of the table above.</p>
+<h3>What this does not protect</h3>
+<ul class="words">
+<li><b>Connectors you add.</b> Connect your mailbox to Claude and this page no longer applies. Keep mail and WhatsApp out.</li>
+<li><b>Your own approvals.</b> You can allow a command outside the sandbox when asked. Read the prompt before you accept.</li>
+<li><b>Reading.</b> The sandbox limits writing much more than reading, so block what you would not want read.</li>
+<li><b>Sensitive data.</b> What a session reads is sent to Claude to be processed. Check your own rules before you point it at personal or research data.</li>
+</ul>
+<h3>The layers in detail</h3>
 <table>
 <tr><th>Layer</th><th>Rule</th></tr>
 <tr><td>Notes</td><td>Only the Notes folder “Claude” is read; locked notes never; a line starting with 🔒, <code>privé</code> or <code>//</code> is skipped. The tick sync opens only notes whose title says “To dos”.</td></tr>
