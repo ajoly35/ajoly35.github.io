@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude workflow setup — Adrien Joly</title>
+<meta name="description" content="Reproduire en un copier-coller l'organisation de travail d'Adrien Joly avec Claude Code : des notes vers l'agenda, les rappels et des sessions Claude autonomes.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.lead{font-size:1.1rem;color:var(--muted);margin:0 0 1.5rem}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:.9rem}.flow span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px}.flow i{color:var(--muted);font-style:normal}
+.step{display:grid;grid-template-columns:40px 1fr;gap:14px;margin:18px 0}.n{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font:600 15px ui-monospace,monospace;display:flex;align-items:center;justify-content:center;margin-top:4px}
+.step h3{margin:0 0 .4rem;font-size:1.05rem}
+pre,code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}pre{background:#f3f1ec;border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow:auto;white-space:pre-wrap;word-break:break-word}code{background:#f3f1ec;padding:1px 4px;border-radius:4px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.95rem}td,th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-weight:600}
+button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--accent);color:#fff;border:0;border-radius:6px;padding:9px 14px;cursor:pointer}button:hover{filter:brightness(1.1)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:.4rem 0}.export p{margin:.4rem 0}.words{padding-left:1.3rem}.words li{margin:.35rem 0}#schema{margin:14px 0}
+.small{font-size:.9rem;color:var(--muted)}.box{border:1px solid var(--line);border-radius:8px;padding:14px 18px;background:#fff;margin:14px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="site">
+    <a class="name" href="index.html">Adrien Joly</a>
+    <nav class="site">
+      <a href="index.html">Home</a>
+      <a href="cv.html">CV</a>
+      <a href="research.html">Research</a>
+      <a href="writing.html">Writing</a>
+      <a href="talks.html">Talks</a>
+      <a href="setup.html" aria-current="page">Claude workflow setup</a>
+    </nav>
+  </header>
+
+<p class="small"><a href="setup.html" lang="en">English version</a></p>
+<h1>Mon organisation avec Claude : noter, trier, exécuter, clôturer</h1>
+<p class="lead">Donnez-lui une ligne comme vous voulez : chaque ligne devient un rendez-vous, un rappel, ou une session Claude Code qui travaille pendant que vous faites autre chose. Quand vous envoyez un message et le cochez, la note et la liste de tâches se mettent à jour toutes seules.</p>
+
+<div class="box export"><p><b>Reprendre tout le dispositif</b></p>
+<p class="btns"><button data-copy="installer">Copier l'installateur</button><button data-copy="prompt">Copier le prompt d'installation</button><button id="dl-schema">Télécharger le schéma</button></p>
+<p class="small" id="ok-top" aria-live="polite">L'installateur se colle dans le Terminal. Le prompt se colle dans Claude Code, qui lit l'installateur et demande votre accord avant de le lancer.</p></div>
+
+<h2>Schéma global</h2>
+<svg id="schema" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 716 546" role="img" aria-labelledby="schema-t schema-d" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" style="width:100%;height:auto;display:block"><title id="schema-t">Schéma global du dispositif</title><desc id="schema-d">Une ligne entre dans la note par la dictée, le clavier ou Claude. cc inbox la range dans le Calendrier, les Rappels ou le cockpit. Les sessions font le travail, le consignent et préparent des brouillons. Vous envoyez et cochez un message ; la ligne de la note reçoit un ✅ et la tâche quitte le cockpit.</desc><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5a5a5a"/></marker><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2e7d32"/></marker></defs><rect x="24" y="22" width="190" height="36" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="119.0" y="45.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Dicter</text><rect x="255" y="22" width="190" height="36" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="45.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Écrire</text><rect x="486" y="22" width="190" height="36" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="581.0" y="45.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Demander à Claude</text><text x="350" y="13" font-size="11" fill="#5a5a5a" text-anchor="middle" letter-spacing=".06em">AU CHOIX, AUCUN N'EST OBLIGATOIRE</text><path d="M119 58L232 92" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><path d="M350 58V92" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><path d="M581 58L468 92" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="180" y="94" width="340" height="40" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="111.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">App Notes d'Apple</text><text x="350.0" y="128.0" text-anchor="middle" font-size="12" fill="#5a5a5a">une ligne par chose à faire</text><path d="M350 134V160" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="255" y="162" width="190" height="38" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="186.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">cc inbox trie chaque ligne</text><path d="M305 200L119 232" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><path d="M350 200V232" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><path d="M395 200L581 232" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="24" y="234" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="119.0" y="255.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Calendrier</text><text x="119.0" y="272.0" text-anchor="middle" font-size="12" fill="#5a5a5a">rendez-vous</text><rect x="255" y="234" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="255.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Rappels</text><text x="350.0" y="272.0" text-anchor="middle" font-size="12" fill="#5a5a5a">choses à ne pas oublier</text><rect x="486" y="234" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="581.0" y="255.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Cockpit</text><text x="581.0" y="272.0" text-anchor="middle" font-size="12" fill="#5a5a5a">tâches par priorité</text><path d="M581 282V316" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="486" y="318" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="581.0" y="339.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Sessions Claude</text><text x="581.0" y="356.0" text-anchor="middle" font-size="12" fill="#5a5a5a">3 à la fois, résultats dans output/</text><path d="M486 342H447" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="255" y="318" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="350.0" y="339.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Journal</text><text x="350.0" y="356.0" text-anchor="middle" font-size="12" fill="#5a5a5a">ce qui a été fait</text><path d="M255 342H216" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="24" y="318" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="119.0" y="339.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Mémo hebdomadaire</text><text x="119.0" y="356.0" text-anchor="middle" font-size="12" fill="#5a5a5a">rédigé pour vous</text><path d="M581 366V400" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="486" y="402" width="190" height="48" rx="8" fill="#ffffff" stroke="#b9b4ab"/><text x="581.0" y="423.0" text-anchor="middle" font-size="14" font-weight="600" fill="#1a1a1a">Brouillons</text><text x="581.0" y="440.0" text-anchor="middle" font-size="12" fill="#5a5a5a">dans la liste Rappels Comms</text><path d="M581 450V484" fill="none" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#a)"/><rect x="486" y="486" width="190" height="48" rx="8" fill="#7a1f2b" stroke="#7a1f2b"/><text x="581.0" y="507.0" text-anchor="middle" font-size="14" font-weight="600" fill="#ffffff">Vous envoyez et cochez</text><text x="581.0" y="524.0" text-anchor="middle" font-size="12" fill="#ffffff">la seule étape manuelle</text><path d="M486 510H8V114H178" fill="none" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#g)"/><path d="M676 510H688V258H678" fill="none" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#g)"/><text x="247" y="502" font-size="13" fill="#2e7d32" text-anchor="middle" font-weight="600">la ligne de la note reçoit un ✅</text><text x="0" y="0" font-size="13" fill="#2e7d32" text-anchor="middle" font-weight="600" transform="translate(711 384) rotate(-90)">la tâche quitte le cockpit</text></svg>
+<ol class="words">
+<li><b>Noter.</b> Dictez, écrivez ou demandez à Claude. Ce sont des options, à vous de prendre la plus pratique : la dictée n'est jamais obligatoire.</li>
+<li><b>Trier.</b> <code>cc inbox</code> envoie chaque ligne vers le Calendrier, les Rappels ou le cockpit.</li>
+<li><b>Exécuter.</b> Les sessions Claude traitent le cockpit, consignent ce qu'elles ont fait et vous laissent des brouillons.</li>
+<li><b>Clôturer.</b> Vous envoyez un brouillon et le cochez. En cinq minutes, sa ligne reçoit un ✅ et sa tâche quitte le cockpit.</li>
+</ol>
+
+<h2>Ce que vous obtenez</h2>
+<table>
+<tr><th>Commande</th><th>Ce qu'elle fait</th></tr>
+<tr><td><code>cc</code></td><td>choisit un projet et ouvre (ou rouvre) sa session Claude Code ; <code>cc &lt;nom&gt; -c</code> reprend la dernière conversation</td></tr>
+<tr><td><code>cc inbox</code></td><td>lit la note du jour dans Apple Notes, classe chaque ligne (tâche, rendez-vous, rappel, avec une priorité), montre le plan puis répartit : les rendez-vous au Calendrier, les rappels aux Rappels, les tâches dans leur propre session. <code>--auto</code> lance les tâches en arrière-plan, en autonomie</td></tr>
+<tr><td><code>cc cockpit</code> · <code>cc run</code></td><td>une page avec les tâches par priorité (à faire, en cours, <i>à relire</i>, <i>à vous</i>), ce qui vous attend, les sessions actives et le journal du jour ; <code>cc run</code> confie toutes les tâches ouvertes à une file qui lance jusqu'à trois sessions Claude à la fois, P1 d'abord, chacune dans son dossier de projet, résultats dans <code>output/</code></td></tr>
+<tr><td><code>cc todo "…"</code></td><td>ajoute une ligne à la note du jour dans Apple Notes (créée dans le dossier Claude si elle n'existe pas) ; les sessions Claude Code peuvent le faire aussi si vous le leur demandez</td></tr>
+<tr><td><code>cc me</code> · <code>cc clean</code> · <code>cc reset</code></td><td>marque une tâche comme vous revenant (envoyer, appeler, décider : jamais confiée à une session) ; ferme les sessions terminées ; remet une tâche à « à faire »</td></tr>
+<tr><td><code>cc memo</code> · <code>--message</code></td><td>compile le travail de la semaine (journal des sessions, notes de projet, git) en un brouillon de mémo, puis en un message court avec des demandes nominatives et des échéances</td></tr>
+<tr><td><code>cc comms</code></td><td>une banque de messages en brouillon, poussée dans une liste Rappels, modifiable et copiable depuis le téléphone. Cochez-en un une fois envoyé : <code>done-sync.py</code> le marque comme envoyé, coche sa ligne dans la note et ferme sa tâche, toutes les cinq minutes</td></tr>
+<tr><td>Clic droit → Services</td><td><b>Accentuer</b> corrige les accents français d'un texte sélectionné (pour un clavier américain) ; <b>Launch idea</b> transforme une ligne de note sélectionnée en session</td></tr>
+</table>
+<p class="small">Chaque dossier de projet contient un <code>CLAUDE.md</code> (ce qu'est le projet, où sont les données brutes, les règles) : une session n'a jamais besoin qu'on lui réexplique le contexte. Les données brutes sont en lecture seule partout.</p>
+
+<h3>Si vous venez de VS Code</h3>
+<p>Vos conversations Claude Code dans VS Code sont gardées sur le disque, par dossier de projet : fermer les fenêtres ne fait perdre que ce qui tournait à cet instant. Pour en reprendre une depuis le terminal : <code>cc &lt;nom&gt; -c</code> reprend la dernière conversation de ce dossier, ou <code>cd</code> dans le dossier puis <code>claude --resume</code> pour choisir dans une liste. Le contexte du projet se trouve dans le <code>CLAUDE.md</code> de chaque dossier, que chaque nouvelle session lit toute seule. Utilisez zsh, le shell par défaut du Mac : <code>cc</code> n'existe pas dans bash.</p>
+
+<h2>Installer en trois étapes</h2>
+
+<div class="step"><div class="n">1</div><div><h3>Claude Code sur le Mac</h3>
+<p>Il vous faut un compte Claude (Pro ou Max), l'<a href="https://claude.ai/download">application Claude pour ordinateur</a> et Claude Code. Le guide le plus clair pour les non-développeurs est <a href="https://claudeblattman.com/toolkit/install-mac/">Install Claude Code (Mac)</a> de Chris Blattman, en anglais. En bref :</p>
+<pre>curl -fsSL https://claude.ai/install.sh | bash
+claude        # connectez-vous une fois, puis tapez n'importe quoi pour vérifier qu'il répond</pre>
+<p class="small">Homebrew est nécessaire pour <code>tmux</code> et <code>fzf</code> : <a href="https://brew.sh">brew.sh</a>, une commande à coller.</p></div></div>
+
+<div class="step"><div class="n">2</div><div><h3>Le kit, en un copier-coller</h3>
+<p>Le script ci-dessous contient tous les fichiers du kit (25 fichiers, tous en texte brut, rien n'est téléchargé ailleurs). Il les écrit dans <code>~/claude-kit</code> et lance l'installateur : lanceur, scripts, actions rapides, configuration tmux, dossier scratch avec un modèle de projet, et une ligne dans votre <code>.zshrc</code>. Lisez-le d'abord si vous le souhaitez : c'est tout l'intérêt de le fournir en texte.</p>
+<p><button id="copy">Copier l'installateur</button> &nbsp; <a href="assets/claude-kit-installer.zsh" download>ou le télécharger (.zsh, 117 Ko)</a> <span id="ok" class="small"></span></p>
+<p>Puis dans le Terminal : collez, appuyez sur Entrée. Ou, pour le lancer directement depuis le presse-papiers :</p>
+<pre>pbpaste | zsh</pre>
+</div></div>
+
+<div class="step"><div class="n">3</div><div><h3>Sécuriser, puis premier essai</h3>
+<pre>python3 ~/.config/claude-launcher/merge-settings.py   # sandbox et règles de refus dans ~/.claude/settings.json
+cc ls                 # doit afficher : scratch
+cc new first-idea     # un projet avec son CLAUDE.md, Claude s'y ouvre</pre>
+<p class="small">Le script de fusion sauvegarde vos réglages, garde toutes vos règles, refuse un fichier déjà cassé (et indique la ligne), puis valide le résultat. Ne collez pas l'extrait à la main : un <code>{ ... }</code> oublié casse tout le fichier.</p>
+<p>Dans Apple Notes, créez un dossier nommé <b>Claude</b> (le kit ne lit rien d'autre) et, dedans, une note intitulée <b>to dos &lt;date du jour&gt;</b> avec trois lignes : un rendez-vous (« appeler X jeudi 15h »), un rappel (« envoyer le fichier à Y demain »), un travail (« rédiger une synthèse d'une page sur … »). Puis <code>cc inbox</code>. macOS demandera une fois d'autoriser le Terminal à piloter Notes, Calendrier et Rappels.</p>
+<p>Pour chaque dossier de travail existant : <code>cd</code> dedans, <code>cc add</code>, puis demandez à Claude, dans la session, d'écrire le <code>CLAUDE.md</code> du projet. Ensuite, <code>cc &lt;nom&gt;</code> l'ouvre avec son contexte.</p></div></div>
+
+<h2>La routine quotidienne</h2>
+<table>
+<tr><th>Quand</th><th>Quoi</th></tr>
+<tr><td>À tout moment</td><td>Ajoutez des lignes à la note du jour : dictez (Siri : « note : … »), écrivez, lancez <code>cc todo "…"</code>, ou demandez à une session Claude. Des lignes, pas des paragraphes : un verbe, l'entrée, le résultat attendu.</td></tr>
+<tr><td>Le matin, sur le Mac</td><td><code>cc inbox</code>. Les rendez-vous et rappels se rangent, les tâches arrivent au cockpit reformulées en verbe + entrée + résultat. <code>cc me &lt;id&gt;</code> sur celles que vous seul pouvez faire, puis <code>cc run</code>, et vous pouvez partir.</td></tr>
+<tr><td>De retour au bureau</td><td><code>cc cockpit</code> : les tâches <i>à relire</i> ont leurs résultats dans <code>output/</code>, avec un README qui dit quoi vérifier. <code>cc &lt;session&gt;</code> puis <code>claude -c</code> pour continuer avec la session qui l'a fait ; <code>cc clean</code> pour fermer le reste.</td></tr>
+<tr><td>Dans la journée</td><td><code>cc</code> pour passer dans une session ; <code>Option+←/→</code> pour naviguer entre elles ; <code>Ctrl-b d</code> pour tout laisser tourner.</td></tr>
+<tr><td>Quand vous envoyez</td><td>Copiez un brouillon depuis Rappels, envoyez-le vous-même, cochez-le. La note et le cockpit suivent en cinq minutes.</td></tr>
+<tr><td>Chaque semaine</td><td><code>cc memo</code>, dictez ce que les sessions ne peuvent pas savoir, <code>cc memo --message</code>, envoyez.</td></tr>
+</table>
+
+<h2>Sécurité</h2>
+<table>
+<tr><th>Niveau</th><th>Règle</th></tr>
+<tr><td>Notes</td><td>Seul le dossier Notes « Claude » est lu ; jamais les notes verrouillées ; une ligne commençant par 🔒, <code>privé</code> ou <code>//</code> est ignorée. La synchronisation des coches n'ouvre que les notes dont le titre contient « To dos ».</td></tr>
+<tr><td>Disque</td><td>Sandbox de Claude Code (Seatbelt, appliqué par macOS) : les sessions n'écrivent que dans leur dossier de projet et dans le journal, le cockpit et la file ; elles ne lisent jamais <code>~/.ssh</code>, les trousseaux, les cookies, le mail, les messages, les fichiers <code>.env</code> ni les clés ; elles n'écrivent jamais dans un dossier <code>raw/</code>. Les dossiers cloud (<code>~/Library/CloudStorage</code> : Dropbox, iCloud Drive) peuvent refuser les commandes en sandbox avec « Operation not permitted » : testez les vôtres avant de mettre en file un travail qui en dépend.</td></tr>
+<tr><td>Réseau</td><td>Les commandes shell n'atteignent qu'une courte liste de domaines ; la recherche web passe par les outils de Claude, autorisés pour une liste de sources de référence que vous pouvez étendre.</td></tr>
+<tr><td>Secrets</td><td>Clés d'API dans le trousseau macOS : <code>security add-generic-password -a "$USER" -s &lt;nom&gt; -T /usr/bin/security -U -w</code> (le <code>-T</code> évite une demande de mot de passe à chaque lecture).</td></tr>
+<tr><td>Autonomie</td><td>Les sessions en file tournent en <code>acceptEdits</code> : modifications de fichiers et commandes en sandbox autorisées, tout le reste refusé plutôt que demandé. Elles n'envoient, ne publient, ne poussent et ne suppriment jamais rien.</td></tr>
+</table>
+
+<h2>En cas de blocage</h2>
+<table>
+<tr><th>Symptôme</th><th>Solution</th></tr>
+<tr><td><code>launchctl list | grep cc-queue</code> affiche <code>126</code></td><td>un script a perdu son droit d'exécution : <code>chmod +x ~/.config/claude-launcher/*.zsh</code>, puis relancez <code>zsh ~/claude-kit/install.sh</code></td></tr>
+<tr><td>« settings.json: invalid JSON »</td><td>en général un exemple collé tel quel : corrigez la ligne indiquée, puis lancez <code>merge-settings.py</code></td></tr>
+<tr><td>La file se vide sans rien produire</td><td><code>tail ~/scratch/.queue/done/queue.log</code> et les <code>notes/run-*.log</code> dans le dossier de la tâche</td></tr>
+<tr><td>Une coche n'atteint pas la note</td><td><code>python3 ~/.config/claude-launcher/done-sync.py --dry-run</code> liste ce qui serait synchronisé ; un message doit avoir son lien <code>--task</code> pour fermer une tâche</td></tr>
+<tr><td>Un résultat reste vague</td><td>la ligne de tâche l'était : réécrivez-la en verbe + entrée + résultat, <code>cc reset &lt;id&gt;</code>, <code>cc run</code></td></tr>
+<tr><td>Vous ne savez plus où vous en êtes</td><td><code>cd ~/scratch &amp;&amp; claude</code>, puis demandez : « où en est la file ? »</td></tr>
+</table>
+
+<h2>Ce que ce n'est pas</h2>
+<p>Le kit n'envoie rien. Les messages et les mails sont des brouillons que vous copiez et envoyez vous-même ; les sessions écrivent des fichiers, elles ne publient jamais. Il ne touche pas aux données brutes. Il ne partage rien entre machines : l'état vit dans <code>~/scratch</code> et <code>~/.config/claude-launcher</code> sur votre Mac. Et c'est un ensemble de fichiers zsh et Python lisibles en un après-midi, ce qui explique qu'il soit partagé ainsi plutôt que sous forme d'application.</p>
+
+<h2>Crédits</h2>
+<p>Construit avec Claude, en une matinée, à partir des guides Claude Code de <a href="https://claudeblattman.com">Claude Blattman</a> (la ressource ouverte de Chris Blattman pour les chercheurs qui ne codent pas ; son <a href="https://github.com/chrisblattman/claudeblattman">kit de démarrage</a> est une bonne étape suivante : <code>/plugin marketplace add chrisblattman/claudeblattman</code>). Le kit est sous licence MIT : prenez-le, modifiez-le, partagez-le.</p>
+<p class="small">Page mise à jour le 4 novembre 2026. Le kit lui-même, ses commentaires et son mode d'emploi sont en partie en anglais.</p>
+
+</div>
+<script>
+const SETUP_PROMPT=`Installe sur ce Mac le kit Claude Code d'Adrien Joly (https://ajoly35.github.io/setup-fr.html).
+
+1. Télécharge https://ajoly35.github.io/assets/claude-kit-installer.zsh, lis-le, et dis-moi en cinq lignes ce qu'il va modifier. Attends mon accord.
+2. Lance-le, puis lance : python3 ~/.config/claude-launcher/merge-settings.py
+3. Vérifie que tout fonctionne avec cc ls, et que la file d'attente est bien chargée.
+4. Guide-moi pour ma première note : un dossier nommé Claude dans Apple Notes, puis une note intitulée « to dos » suivie de la date du jour.
+5. Arrête-toi là et dis-moi ce qu'il me reste à faire moi-même, comme les autorisations demandées par macOS.
+
+N'envoie, ne publie et ne pousse jamais rien à ma place.`;
+const say=t=>{document.getElementById('ok-top').textContent=t};
+async function installer(){const r=await fetch('assets/claude-kit-installer.zsh');if(!r.ok)throw 0;return r.text()}
+document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',async()=>{
+  try{
+    if(b.dataset.copy==='prompt'){await navigator.clipboard.writeText(SETUP_PROMPT);say('Copié. Collez-le dans Claude Code.')}
+    else{await navigator.clipboard.writeText(await installer());say('Copié. Collez-le dans le Terminal et appuyez sur Entrée (ou : pbpaste | zsh).')}
+  }catch(e){say("La copie a échoué. Utilisez le lien de téléchargement à l'étape 2.")}
+}));
+document.getElementById('dl-schema').addEventListener('click',()=>{
+  const svg=document.getElementById('schema').outerHTML;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
+  a.download='schema-setup.svg';a.click();URL.revokeObjectURL(a.href);say('Schéma enregistré : schema-setup.svg.');
+});
+document.getElementById('copy').addEventListener('click',async()=>{const ok=document.getElementById('ok');try{await navigator.clipboard.writeText(await installer());ok.textContent='Copié. Collez-le dans le Terminal et appuyez sur Entrée (ou : pbpaste | zsh).';}catch(e){ok.textContent='La copie a échoué. Utilisez le lien de téléchargement.';}});
+</script>
+</body>
+</html>
