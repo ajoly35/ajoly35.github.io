@@ -1,0 +1,22 @@
+# Weekly rhythm: the fixed part of every week. Edit freely; plan_week.py reads this file.
+# Format: <days> <HH:MM>-<HH:MM> <kind> <title>
+#   days : daily | weekdays | weekend | mon,wed,fri (any comma list of mon..sun)
+#   kind : fixed   = always placed as written
+#          deep    = deep-work slot, filled with the top [research] or [core] priority still needing hours
+#          project = project slot, filled with the next priority still needing hours
+#          flex    = placed as written, but a one-off event can override it
+# Later lines win when two lines cover the same day and time (put exceptions last).
+
+daily       07:30-08:00 fixed   Exercise
+weekdays    08:45-09:15 fixed   Commute
+weekdays    09:15-09:45 fixed   Launch Claude sessions (sort the Claude note, start the queue)
+weekdays    09:45-12:30 deep    Deep work
+weekdays    12:30-13:30 fixed   Lunch
+weekdays    13:30-15:00 project Project block
+weekdays    15:00-16:00 flex    Buffer for new requests (if none: review Claude outputs)
+weekdays    16:00-17:00 project Project block
+mon,wed,fri 16:00-16:45 fixed   Outreach: set up meetings
+tue,thu     16:00-16:45 fixed   Reading
+weekdays    17:00-17:30 fixed   Review Claude outputs
+weekdays    17:30-18:00 fixed   Commute
+sun         18:00-18:30 fixed   Set next week's priorities (with Claude)
