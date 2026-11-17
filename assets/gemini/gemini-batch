@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""gemini-batch: half-price Gemini Batch API for non-urgent prose (paper sections, reviews).
+
+Same voice rules, thinking cap and ledger as gemini-write. Google targets 24 h turnaround
+(often much sooner); jobs expire after 48 h.
+
+  gemini-batch submit --type paper --outdir out/ brief1.md brief2.md ...
+      -> one job for all briefs; job saved in out/.gemini-batch.json
+  gemini-batch fetch out/
+      -> checks the job once; when done writes out/<brief-name>.txt and logs the cost
+         at batch price. Run again later if still pending.
+
+Daily cap and brief-size guard apply at submit time (estimated with the per-type output cap).
+Never resubmit a failed job automatically: report to the user.
+"""
+import argparse, datetime, importlib.machinery, json, pathlib, sys, time, urllib.request
+
+GW = importlib.machinery.SourceFileLoader("gw", str(pathlib.Path(__file__).with_name("gemini-write"))).load_module()
+API = "https://generativelanguage.googleapis.com/v1beta"
+
+
+def call(url, key, body=None):
+    req = urllib.request.Request(url, data=None if body is None else json.dumps(body).encode(),
+                                 method="GET" if body is None else "POST",
+                                 headers={"Content-Type": "application/json", "x-goog-api-key": key})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return json.loads(r.read())
+
+
+def submit(a):
+    model = GW.DRAFT_MODEL if a.draft else GW.MODEL
+    system = GW.build_system(a.type, a.voice)
+    cap = a.max_tokens or GW.MAX_TOKENS[a.type]
+    reqs, est_cost, names = [], 0.0, []
+    pin, pout = GW.price(model, batch=True)
+    for b in a.briefs:
+        p = pathlib.Path(b)
+        brief = p.read_text()
+        est_in = (len(system) + len(brief)) // 4
+        if est_in > GW.MAX_INPUT_TOKENS and not a.long_brief:
+            sys.exit(f"gemini-batch: {p.name} is about {est_in} input tokens (limit {GW.MAX_INPUT_TOKENS}). "
+                     "Trim it or pass --long-brief.")
+        est_cost += (est_in * pin + cap * pout) / 1e6 if pin else 0
+        names.append(p.stem)
+        reqs.append({"request": {
+            "systemInstruction": {"parts": [{"text": system}]},
+            "contents": [{"role": "user", "parts": [{"text": brief}]}],
+            "generationConfig": {"maxOutputTokens": cap,
+                                 "thinkingConfig": {"thinkingBudget": a.thinking_budget}}},
+            "metadata": {"key": p.stem}})
+    spent = GW.spent_today()
+    if spent + est_cost > GW.DAILY_CAP and not a.over_cap:
+        sys.exit(f"gemini-batch: worst case ${est_cost:.2f} on top of ${spent:.2f} spent today exceeds the "
+                 f"${GW.DAILY_CAP:.2f} cap. Ask the user; if they agree, rerun with --over-cap.")
+    key = GW.api_key()
+    job = call(f"{API}/models/{model}:batchGenerateContent", key,
+               {"batch": {"display_name": f"gemini-batch-{int(time.time())}",
+                          "input_config": {"requests": {"requests": reqs}}}})
+    out = pathlib.Path(a.outdir)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / ".gemini-batch.json").write_text(json.dumps(
+        {"name": job["name"], "model": model, "type": a.type, "briefs": names,
+         "submitted": datetime.datetime.now().isoformat(timespec="seconds")}, indent=1))
+    print(f"[gemini-batch] submitted {job['name']} · {len(reqs)} briefs · {model} · worst case ${est_cost:.2f} "
+          f"(batch price). Fetch later: gemini-batch fetch {out}")
+
+
+def fetch(a):
+    out = pathlib.Path(a.outdir)
+    meta = json.loads((out / ".gemini-batch.json").read_text())
+    if meta.get("done"):
+        sys.exit("gemini-batch: already fetched.")
+    key = GW.api_key()
+    job = call(f"{API}/{meta['name']}", key)
+    state = job.get("state") or job.get("metadata", {}).get("state") or "?"
+    if state in ("JOB_STATE_PENDING", "JOB_STATE_RUNNING", "BATCH_STATE_PENDING", "BATCH_STATE_RUNNING"):
+        sys.exit(f"gemini-batch: {meta['name']} still {state}. Try again later.")
+    resp = (job.get("dest") or job.get("response") or job.get("metadata", {}).get("output") or {})
+    items = resp.get("inlinedResponses") or resp.get("inlined_responses") or []
+    if isinstance(items, dict):
+        items = items.get("inlinedResponses", [])
+    if not items:
+        raw = out / ".gemini-batch-raw.json"
+        raw.write_text(json.dumps(job, indent=1))
+        sys.exit(f"gemini-batch: state {state}, no responses found. Raw job saved to {raw}.")
+    pin, pout = GW.price(meta["model"], batch=True)
+    total = 0.0
+    for i, it in enumerate(items):
+        name = (it.get("metadata") or {}).get("key") or meta["briefs"][i]
+        r = it.get("response") or {}
+        if not r:
+            GW.log("batch:" + meta["model"], meta["type"], "", "", None, "batch-error", 0)
+            print(f"  {name}: ERROR {json.dumps(it.get('error'))[:300]}", file=sys.stderr)
+            continue
+        u = r.get("usageMetadata", {})
+        tin = u.get("promptTokenCount", 0)
+        tout = u.get("candidatesTokenCount", 0) + u.get("thoughtsTokenCount", 0)
+        cost = (tin * pin + tout * pout) / 1e6 if pin else None
+        total += cost or 0
+        c = (r.get("candidates") or [{}])[0]
+        text = "".join(p.get("text", "") for p in c.get("content", {}).get("parts", []) if not p.get("thought"))
+        status = {"STOP": "ok", "MAX_TOKENS": "truncated"}.get(c.get("finishReason"), str(c.get("finishReason")).lower())
+        GW.log("batch:" + meta["model"], meta["type"], tin, tout, cost, status, 0)
+        (out / f"{name}.txt").write_text(text.rstrip() + "\n")
+        print(f"  {name}: in {tin} / out {tout} · ${cost or 0:.3f} · {status}", file=sys.stderr)
+    meta["done"] = True
+    (out / ".gemini-batch.json").write_text(json.dumps(meta, indent=1))
+    print(f"[gemini-batch] {state} · {len(items)} responses · ${total:.3f} at batch price · written to {out}")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sp = ap.add_subparsers(dest="cmd", required=True)
+    s = sp.add_parser("submit")
+    s.add_argument("--type", required=True, choices=sorted(GW.VOICE))
+    s.add_argument("--outdir", required=True)
+    s.add_argument("--voice", action="append", default=[])
+    s.add_argument("--max-tokens", type=int, default=None)
+    s.add_argument("--thinking-budget", type=int, default=GW.THINKING_DEFAULT)
+    s.add_argument("--draft", action="store_true")
+    s.add_argument("--over-cap", action="store_true")
+    s.add_argument("--long-brief", action="store_true")
+    s.add_argument("briefs", nargs="+")
+    f = sp.add_parser("fetch")
+    f.add_argument("outdir")
+    a = ap.parse_args()
+    submit(a) if a.cmd == "submit" else fetch(a)
+
+
+if __name__ == "__main__":
+    main()

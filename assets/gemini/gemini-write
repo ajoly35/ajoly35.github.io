@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+"""gemini-write: have Gemini (default: Gemini 4 Carbon) write your human-facing prose.
+
+Claude prepares a brief (facts, figures with sources, structure, audience, language, length);
+this script sends it to the Gemini API with your voice rules and prints the draft.
+
+Set-up: export GEMINI_API_KEY (AI Studio key) and GEMINI_WRITE_AUTHOR ("Jane Doe, a research
+fellow in economics at X") in ~/.zshrc. Optional voice notes: ~/.claude/rules/core-voice.md,
+email-voice.md, academic-voice.md, thinktank-voice.md (missing files are skipped).
+Source and explanations: https://ajoly35.github.io/setup.html
+
+Usage:
+  gemini-write --type paper --brief brief.md [--voice extra.md] [--out draft.md]
+  gemini-write --type paper --brief brief.md --draft        # cheap Flash draft, not for sending
+  cat brief.md | gemini-write --type policy-note
+
+Types: email, policy-note, paper, proposal, web, newsletter.
+Direct API call (no tools, no Search grounding). Works inside the Claude Code sandbox.
+For non-urgent multi-section work use gemini-batch (half price, results within 24 h).
+
+COST CONTROLS (added 2026-11-16, after one day of retries and runaway thinking):
+- Thinking is capped at 2,000 tokens by default (GEMINI_THINKING_BUDGET or --thinking-budget).
+  Thinking is billed as output ($10 per 1M on Carbon, $20 from 1 Dec 2026).
+- One call at a time: a lock file makes parallel calls wait (parallel calls caused dropped
+  streams). Do not run calls in parallel and NEVER re-run a failed call automatically:
+  report the failure to the user.
+- Daily cap: $3 per day across all calls (GEMINI_DAILY_CAP_USD). Once reached the helper
+  refuses (exit 5) until the user agrees; then pass --over-cap.
+- Brief guard: input above ~12,000 tokens is refused (exit 6) unless --long-brief.
+  Trim the brief to the facts the section needs instead.
+- Dropped streams are logged with the tokens seen so far (or an estimate), since Google
+  still bills them.
+
+Exit codes: 3 truncated, 4 other non-ok finish, 5 daily cap, 6 brief too long.
+Every call is logged to ~/.config/claude-launcher/ledger/gemini-usage.tsv.
+"""
+import argparse, datetime, fcntl, json, os, pathlib, subprocess, sys, time, urllib.error, urllib.request
+
+CARBON = "gemini-4-carbon"
+DRAFT_MODEL = os.environ.get("GEMINI_DRAFT_MODEL", "gemini-3.8-flash")
+MODEL = os.environ.get("GEMINI_WRITE_MODEL", CARBON)
+RULES = pathlib.Path.home() / ".claude" / "rules"
+LEDGER = pathlib.Path.home() / ".config" / "claude-launcher" / "ledger" / "gemini-usage.tsv"
+LOCK = LEDGER.parent / "gemini-write.lock"
+HEADER = "timestamp\tmodel\ttype\tin_tokens\tout_tokens\tcost_usd\tcwd\tstatus\tseconds\n"
+DAILY_CAP = float(os.environ.get("GEMINI_DAILY_CAP_USD", "3"))
+THINKING_DEFAULT = int(os.environ.get("GEMINI_THINKING_BUDGET", "2000"))
+MAX_INPUT_TOKENS = 12000
+
+VOICE = {
+    "email": ["email-voice.md"],
+    "policy-note": ["thinktank-voice.md"],
+    "paper": ["academic-voice.md"],
+    "proposal": ["academic-voice.md"],
+    "web": [],
+    "newsletter": [],
+}
+
+# Max output tokens per type, thinking included. With thinking capped at 2,000 these leave
+# room for the text itself.
+MAX_TOKENS = {
+    "email": 6000,
+    "web": 6000,
+    "policy-note": 12000,
+    "proposal": 12000,
+    "newsletter": 12000,
+    "paper": 16000,
+}
+
+AUTHOR = os.environ.get("GEMINI_WRITE_AUTHOR", "the author")
+
+BASE = """You write final text for {author},
+in their own voice. The text is sent or published under their name.
+
+Hard rules:
+- Use ONLY the facts, figures, names, dates and citations given in the brief. Never invent,
+  round differently, or add a source, statistic, quote or claim. If something needed is
+  missing, write [TO CHECK: ...] in its place.
+- Keep every citation exactly as given (author, year, page).
+- Write in the language and register the brief asks for.
+- No em-dashes or double hyphens for asides. Use commas or split the sentence.
+- Never use: delve, leverage, multifaceted, furthermore, moreover, robust, compelling,
+  navigate, foster, transformative, pivotal, "I hope this email finds you well".
+- Concrete over vague; plain words; one point per paragraph.
+- Output only the finished text (with a subject line first if it is an email). No preamble,
+  no notes to the author, no markdown code fences.""".replace("{author}", AUTHOR)
+
+TYPE_HINT = {
+    "email": "This is an email (a reply or a new message). Match the thread's language and formality.",
+    "policy-note": "This is a policy note. Proposals first, every claim with a figure or a named source.",
+    "paper": "This is part of an academic research paper in economics. Claims first, evidence with context, plain meaning for every number.",
+    "proposal": "This is a research paper proposal. State the question, why it matters, the data and the identification plainly.",
+    "web": "This is a page or text for the author's personal website. Clear, warm, factual.",
+    "newsletter": "This is the author's newsletter. Lead with what is new and why it matters.",
+}
+
+
+def api_key():
+    k = os.environ.get("GEMINI_API_KEY")
+    if k:
+        return k
+    try:  # key lives in ~/.zshrc; older shell snapshots may not have it
+        out = subprocess.run(["zsh", "-ic", 'printf "%s" "$GEMINI_API_KEY"'],
+                             capture_output=True, text=True, timeout=20).stdout
+        k = out.strip().splitlines()[-1] if out.strip() else ""
+    except Exception:
+        k = ""
+    if not k:
+        sys.exit("gemini-write: GEMINI_API_KEY not set (export it in ~/.zshrc).")
+    return k
+
+
+def price(model, today=None, batch=False):
+    """$ per million tokens (input, output incl. thinking), from the AI Studio pricing page
+    (read 2026-11-16). Batch is half price."""
+    today = today or datetime.date.today()
+    if model in ("gemini-4-carbon", "gemini-4-argon"):
+        p = (2.0, 10.0) if today < datetime.date(2026, 12, 1) else (4.0, 20.0)
+    elif model in ("gemini-3.8-flash", "gemini-3.6-flash"):
+        p = (0.75, 3.75) if today < datetime.date(2027, 1, 1) else (1.5, 7.5)
+    elif model == "gemini-4-hydrogen":
+        p = (1.5, 7.5)
+    elif model == "gemini-3.5-flash-lite":
+        p = (0.30, 2.50)
+    else:
+        return (None, None)
+    return (p[0] / 2, p[1] / 2) if batch else p
+
+
+def spent_today():
+    today = datetime.date.today().isoformat()
+    total = 0.0
+    try:
+        for line in LEDGER.read_text().splitlines()[1:]:
+            f = line.split("\t")
+            if f and f[0].startswith(today) and len(f) > 5 and f[5]:
+                try:
+                    total += float(f[5])
+                except ValueError:
+                    pass
+    except OSError:
+        pass
+    return total
+
+
+def log(model, kind, tin, tout, cost, status, secs):
+    try:
+        LEDGER.parent.mkdir(parents=True, exist_ok=True)
+        if not LEDGER.exists():
+            LEDGER.write_text(HEADER)
+        with LEDGER.open("a") as f:
+            f.write(f"{datetime.datetime.now().isoformat(timespec='seconds')}\t{model}\t{kind}\t{tin}\t{tout}\t"
+                    f"{'' if cost is None else round(cost, 4)}\t{os.getcwd()}\t{status}\t{secs:.0f}\n")
+    except OSError:
+        pass
+
+
+def build_system(kind, extra_voice):
+    files = [RULES / "core-voice.md"] + [RULES / f for f in VOICE[kind]] + [pathlib.Path(v).expanduser() for v in extra_voice]
+    voice = "\n\n".join(f"### {p.name}\n{p.read_text()}" for p in files if p.exists())
+    return f"{BASE}\n\n{TYPE_HINT[kind]}\n\nThe author's voice notes (from their real writing):\n\n{voice}"
+
+
+def thinking_config(mode, budget):
+    """mode 'budget' -> thinkingBudget; mode 'level' -> thinkingLevel low (Gemini 4 fallback)."""
+    tc = {"includeThoughts": True}
+    if mode == "budget":
+        tc["thinkingBudget"] = budget
+    elif mode == "level":
+        tc["thinkingLevel"] = "low"
+    return tc
+
+
+def stream(model, body, key, state):
+    """POST to streamGenerateContent (SSE). Fills state: text, usage, finish, chars."""
+    req = urllib.request.Request(
+        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse",
+        data=json.dumps(body).encode(), method="POST",
+        headers={"Content-Type": "application/json", "x-goog-api-key": key})
+    # timeout = max silence between chunks, not total duration
+    with urllib.request.urlopen(req, timeout=180) as r:
+        for raw in r:
+            line = raw.decode("utf-8", errors="replace").strip()
+            if not line.startswith("data:"):
+                continue
+            chunk = json.loads(line[5:].strip())
+            if "error" in chunk:
+                raise RuntimeError(json.dumps(chunk["error"])[:500])
+            state["usage"] = chunk.get("usageMetadata", state["usage"])
+            for c in chunk.get("candidates", [])[:1]:
+                for p in c.get("content", {}).get("parts", []):
+                    t = p.get("text", "")
+                    state["chars"] += len(t)
+                    if not p.get("thought"):
+                        state["text"].append(t)
+                state["finish"] = c.get("finishReason", state["finish"])
+
+
+def tokens(state, est_in):
+    u = state["usage"]
+    tin = u.get("promptTokenCount") or est_in
+    tout = (u.get("candidatesTokenCount", 0) + u.get("thoughtsTokenCount", 0)) or state["chars"] // 4
+    return tin, tout, not u
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--type", required=True, choices=sorted(VOICE))
+    ap.add_argument("--brief", help="brief file (default: stdin)")
+    ap.add_argument("--voice", action="append", default=[], help="extra voice/rules file (repeatable)")
+    ap.add_argument("--out", help="write the draft here as well as stdout")
+    ap.add_argument("--temperature", type=float, default=None)
+    ap.add_argument("--max-tokens", type=int, default=None,
+                    help="output cap incl. thinking (default per type: %s)" % MAX_TOKENS)
+    ap.add_argument("--thinking-budget", type=int, default=THINKING_DEFAULT,
+                    help="cap on thinking tokens (default %d)" % THINKING_DEFAULT)
+    ap.add_argument("--draft", action="store_true",
+                    help=f"use the cheap draft model ({DRAFT_MODEL}); final text still goes through Carbon")
+    ap.add_argument("--over-cap", action="store_true", help="the user agreed to exceed today's cap")
+    ap.add_argument("--long-brief", action="store_true", help="allow input above ~12,000 tokens")
+    a = ap.parse_args()
+    model = DRAFT_MODEL if a.draft else MODEL
+
+    brief = pathlib.Path(a.brief).read_text() if a.brief else sys.stdin.read()
+    if not brief.strip():
+        sys.exit("gemini-write: empty brief.")
+    system = build_system(a.type, a.voice)
+    est_in = (len(system) + len(brief)) // 4
+    if est_in > MAX_INPUT_TOKENS and not a.long_brief:
+        print(f"gemini-write: input is about {est_in} tokens (limit {MAX_INPUT_TOKENS}). Trim the brief to "
+              "the facts this section needs, or pass --long-brief.", file=sys.stderr)
+        sys.exit(6)
+
+    LOCK.parent.mkdir(parents=True, exist_ok=True)
+    lock = open(LOCK, "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("gemini-write: another call is running, waiting (one call at a time)...", file=sys.stderr)
+        fcntl.flock(lock, fcntl.LOCK_EX)
+
+    spent = spent_today()
+    if spent >= DAILY_CAP and not a.over_cap:
+        print(f"gemini-write: daily cap reached (${spent:.2f} of ${DAILY_CAP:.2f} today). Ask the user before "
+              "spending more; if he agrees, rerun with --over-cap.", file=sys.stderr)
+        sys.exit(5)
+
+    cap = a.max_tokens or MAX_TOKENS[a.type]
+    gc = {"maxOutputTokens": cap}
+    if a.temperature is not None:
+        gc["temperature"] = a.temperature
+    body = {"systemInstruction": {"parts": [{"text": system}]},
+            "contents": [{"role": "user", "parts": [{"text": brief}]}]}
+
+    key, t0 = api_key(), time.time()
+    state = {"text": [], "usage": {}, "finish": None, "chars": 0}
+    try:
+        modes = ["budget", "level"] if a.thinking_budget > 0 else ["level"]
+        for i, mode in enumerate(modes):
+            try:
+                stream(model, {**body, "generationConfig": {**gc, "thinkingConfig": thinking_config(mode, a.thinking_budget)}},
+                       key, state)
+                break
+            except urllib.error.HTTPError as e:
+                # 400 = model rejects this thinking setting; no tokens billed. Try the next mode.
+                if e.code != 400 or i == len(modes) - 1:
+                    raise
+                print(f"gemini-write: {model} rejected thinking {mode}, trying thinkingLevel low.", file=sys.stderr)
+    except urllib.error.HTTPError as e:
+        msg = e.read().decode(errors="replace")[:500]
+        log(model, a.type, "", "", None, f"http{e.code}", time.time() - t0)
+        hint = " (prepay credits used up: top up in AI Studio > Billing)" if e.code == 402 else ""
+        sys.exit(f"gemini-write: HTTP {e.code}{hint}\n{msg}")
+    except Exception as e:  # dropped connection, timeout, stream error: Google may still bill it
+        tin, tout, est = tokens(state, est_in)
+        pin, pout = price(model)
+        cost = (tin * pin + tout * pout) / 1e6 if pin is not None else None
+        log(model, a.type, tin, tout, cost, f"dropped:{type(e).__name__}{':est' if est else ''}", time.time() - t0)
+        sys.exit(f"gemini-write: connection failed after {time.time() - t0:.0f}s "
+                 f"({type(e).__name__}: {str(e)[:300]}). Logged ~${cost or 0:.3f}. "
+                 "Do NOT rerun automatically: report to the user.")
+
+    secs = time.time() - t0
+    tin, tout, est = tokens(state, est_in)
+    pin, pout = price(model)
+    cost = (tin * pin + tout * pout) / 1e6 if pin is not None else None
+    cost_s = f"${cost:.3f}" if cost is not None else "n/a"
+    finish = state["finish"]
+    if finish is None:
+        status = "dropped:no-finish"
+    elif finish == "MAX_TOKENS":
+        status = "truncated"
+    elif finish != "STOP":
+        status = finish.lower()
+    else:
+        status = "ok"
+    log(model, a.type, tin, tout, cost, status, secs)
+    print(f"[gemini-write] {model} · {a.type} · in {tin} / out {tout} tokens (cap {cap}, thinking ≤{a.thinking_budget}) "
+          f"· {cost_s} · {secs:.0f}s · {status} · today ${spent + (cost or 0):.2f} of ${DAILY_CAP:.2f}",
+          file=sys.stderr)
+
+    text = "".join(state["text"])
+    if not text.strip():
+        sys.exit(f"gemini-write: no text returned (status {status}). Do not rerun automatically: report to the user.")
+    if status == "dropped:no-finish":
+        print("gemini-write: WARNING stream ended without a finish reason, draft may be incomplete.", file=sys.stderr)
+    if a.out:
+        pathlib.Path(a.out).write_text(text.rstrip() + "\n")
+    print(text.rstrip())
+    if status == "truncated":
+        print(f"gemini-write: WARNING output hit the {cap}-token cap, the draft is TRUNCATED. "
+              "Ask only for the missing part; do not rerun the whole section.", file=sys.stderr)
+        sys.exit(3)
+    if status != "ok":
+        sys.exit(4)
+
+
+if __name__ == "__main__":
+    main()
