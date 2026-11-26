@@ -37,7 +37,7 @@ button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial
   </header>
 
 <p class="small"><a href="setup.html" lang="en">English version</a></p>
-<h1>La recherche avec Claude : faire plus, tout vérifier</h1>
+<h1>La recherche avec Claude</h1>
 <p class="lead">Des agents de recherche assurent désormais en arrière-plan une grande partie du travail lent de la recherche, qu'il s'agisse de trouver et lire des articles, rassembler des données publiques, rédiger ou vérifier, pendant que vous décidez de ce qui compte et contrôlez les résultats. L'outil est Claude Code ; cette page partage les compétences, les agents relecteurs et les routines que j'utilise tous les jours, ainsi que la marche à suivre pour les installer en un après-midi. Rien n'est envoyé ni publié sans vous.</p>
 
 <div class="box export"><p><b>Reprendre tout le dispositif</b></p>
@@ -61,6 +61,7 @@ button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial
 <pre>curl -fsSL https://claude.ai/install.sh | bash
 claude        # connectez-vous une fois, puis posez-lui une question pour vérifier qu'il répond</pre>
 <p>Installez ensuite le kit de recherche ci-dessous, puis le kit de travail plus bas si vous voulez la routine complète.</p>
+<p class="small">Si vous débutez avec le terminal, le point de départ le plus clair pour les non-développeurs est le guide <a href="https://claudeblattman.com/starter-kit/newcomers/">Your first session</a> de Chris Blattman, suivi de son <a href="https://claudeblattman.com/">liste des essentiels</a> (actualisé en novembre 2026).</p>
 <h2 id="research-kit">Le kit de recherche</h2>
 <p>Un seul copier-coller installe huit compétences et trois agents relecteurs dans Claude Code, en ignorant tout ce que vous avez déjà pour ne jamais écraser vos propres versions. Tout est en texte brut, vous pouvez donc tout lire avant d'installer.</p>
 <table>
@@ -107,7 +108,6 @@ claude        # connectez-vous une fois, puis posez-lui une question pour vérif
 <div class="flow"><span>Réunion</span> <i>→</i> <span>Transcription Wispr Flow</span> <i>→</i> <span>Claude Code, via MCP</span> <i>→</i> <span>associée à l'événement de l'agenda</span> <i>→</i> <span>brouillons Gmail et Slack, tâches</span></div>
 <h2 id="workflow">Le kit de travail : planifier, déléguer, relire, envoyer</h2>
 <p>Claude fait le travail de routine en arrière-plan. Vous décidez de ce qui compte, vérifiez ce qu'il a produit et envoyez tout vous-même. Cela prend dix minutes le dimanche et quelques minutes chaque matin et chaque soir.</p>
-<h2>Comment ça marche</h2>
 <ol class="words">
 <li><b>Planifier (dimanche, 10 minutes).</b> Donnez à Claude vos priorités de la semaine, chacune avec un nombre d'heures. Un petit script les place en créneaux dans un agenda séparé, autour des parties fixes de votre semaine (sport, trajets, déjeuner, un créneau quotidien pour les demandes imprévues), et liste les heures qui ne tiennent pas, pour couper ou réordonner avant que la semaine commence. Avec l'extension 1, vous pouvez aussi planifier une seule journée, par exemple la veille au soir : listez vos priorités avec leur durée et Claude les dispose dans l'agenda « Claude plan » avec des pauses et une couleur par priorité. Il vous indique quelles durées il a estimées.</li>
 <li><b>Déléguer (à tout moment).</b> Notez les tâches à confier à Claude dans une seule note, une ligne chacune : un verbe, l'entrée, le résultat attendu. Vos tâches personnelles restent dans vos propres listes, que Claude ne lit jamais. Le matin, une commande trie la note et lance des sessions Claude en arrière-plan, chacune dans le bon dossier de projet.</li>
@@ -136,25 +136,17 @@ claude        # connectez-vous une fois, puis posez-lui une question pour vérif
 </table>
 <p class="small">Chaque dossier de projet contient un <code>CLAUDE.md</code> (ce qu'est le projet, où sont les données brutes, les règles) : une session n'a jamais besoin qu'on lui réexplique le contexte. Les données brutes sont en lecture seule partout.</p>
 
-<h3>Si vous venez de VS Code</h3>
-<p>Vos conversations Claude Code dans VS Code sont gardées sur le disque, par dossier de projet : fermer les fenêtres ne fait perdre que ce qui tournait à cet instant. Pour en reprendre une depuis le terminal : <code>cc &lt;nom&gt; -c</code> reprend la dernière conversation de ce dossier, ou <code>cd</code> dans le dossier puis <code>claude --resume</code> pour choisir dans une liste. Le contexte du projet se trouve dans le <code>CLAUDE.md</code> de chaque dossier, que chaque nouvelle session lit toute seule. Utilisez zsh, le shell par défaut du Mac : <code>cc</code> n'existe pas dans bash.</p>
+<h2>Installer le kit de travail en trois étapes</h2>
 
-<h2>Installer en quatre étapes</h2>
-
-<div class="step"><div class="n">1</div><div><h3>Claude Code sur le Mac</h3>
-<p>Il vous faut un compte Claude (Pro ou Max), l'<a href="https://claude.ai/download">application Claude pour ordinateur</a> et Claude Code. Le meilleur point de départ pour les non-développeurs est <a href="https://claudeblattman.com/starter-kit/newcomers/">Your first session</a> de Chris Blattman, puis sa <a href="https://claudeblattman.com/">liste des essentiels</a> (mise à jour en novembre 2026), en anglais. En bref :</p>
-<pre>curl -fsSL https://claude.ai/install.sh | bash
-claude        # connectez-vous une fois, puis tapez n'importe quoi pour vérifier qu'il répond</pre>
-<p class="small">Homebrew est nécessaire pour <code>tmux</code> et <code>fzf</code> : <a href="https://brew.sh">brew.sh</a>, une commande à coller.</p></div></div>
-
-<div class="step"><div class="n">2</div><div><h3>Le kit, en un copier-coller</h3>
+<div class="step"><div class="n">1</div><div><h3>Le kit, en un copier-coller</h3>
 <p>Le script ci-dessous contient tous les fichiers du kit (25 fichiers, tous en texte brut, rien n'est téléchargé ailleurs). Il les écrit dans <code>~/claude-kit</code> et lance l'installateur : lanceur, scripts, actions rapides, configuration tmux, dossier scratch avec un modèle de projet, et une ligne dans votre <code>.zshrc</code>. Lisez-le d'abord si vous le souhaitez : c'est tout l'intérêt de le fournir en texte.</p>
 <p><button id="copy">Copier l'installateur</button> &nbsp; <a href="assets/claude-kit-installer.zsh" download>ou le télécharger (.zsh, 117 Ko)</a> <span id="ok" class="small"></span></p>
 <p>Puis dans le Terminal : collez, appuyez sur Entrée. Ou, pour le lancer directement depuis le presse-papiers :</p>
 <pre>pbpaste | zsh</pre>
+<p class="small">Homebrew est nécessaire pour <code>tmux</code> et <code>fzf</code> : <a href="https://brew.sh">brew.sh</a>, une commande à coller.</p>
 </div></div>
 
-<div class="step"><div class="n">3</div><div><h3>Sécuriser, puis premier essai</h3>
+<div class="step"><div class="n">2</div><div><h3>Sécuriser, puis premier essai</h3>
 <pre>python3 ~/.config/claude-launcher/merge-settings.py   # sandbox et règles de refus dans ~/.claude/settings.json
 cc ls                 # doit afficher : scratch
 cc new first-idea     # un projet avec son CLAUDE.md, Claude s'y ouvre</pre>
@@ -163,7 +155,7 @@ cc new first-idea     # un projet avec son CLAUDE.md, Claude s'y ouvre</pre>
 <p>Pour chaque dossier de travail existant : <code>cd</code> dedans, <code>cc add</code>, puis demandez à Claude, dans la session, d'écrire le <code>CLAUDE.md</code> du projet. Ensuite, <code>cc &lt;nom&gt;</code> l'ouvre avec son contexte.</p></div></div>
 
 
-<div class="step"><div class="n">4</div><div><h3>Planificateur hebdomadaire et garde-fou de dossier</h3>
+<div class="step"><div class="n">3</div><div><h3>Planificateur hebdomadaire et garde-fou de dossier</h3>
 <p>Téléchargez le planificateur dans le dossier de votre choix : <a href="assets/weekly-planner/plan_week.py" download>plan_week.py</a>, <a href="assets/weekly-planner/template.txt" download>template.txt</a> (votre semaine fixe : modifiez les horaires) et <a href="assets/weekly-planner/priorities/2026-11-16.md" download>un exemple de priorités</a> (à mettre dans un sous-dossier <code>priorities/</code>). Essayez :</p>
 <pre>python3 plan_week.py 2026-11-16                          # aperçu seulement
 python3 plan_week.py 2026-11-16 --apple "Claude plan"   # dans un agenda « Claude plan » (créez-le d'abord)</pre>
@@ -301,31 +293,8 @@ echo "Reply with one word: ready" | gemini-write --type email --draft   # test, 
 
 <p>Chaque appel est enregistré, avec le nombre de tokens et le coût, dans <code>~/.config/claude-launcher/ledger/gemini-usage.tsv</code>, et l'outil affiche le total du jour après chaque appel.</p>
 
-<h2>Votre semaine</h2>
-<table>
-<tr><th>Quand</th><th>Quoi</th></tr>
-<tr><td>Dimanche, 10 minutes</td><td>Donnez à Claude les priorités de la semaine avec des heures (« plan de la demande de financement, 3 heures ; nettoyage des données, 5 heures ; séminaire mercredi 14h »). Il écrit le fichier de priorités et montre l'aperçu ; vous coupez ce qui ne tient pas ; il écrit les créneaux dans l'agenda.</td></tr>
-<tr><td>Le soir, 2 minutes (extension 1)</td><td>Listez les priorités du lendemain avec leur durée et vos rendez-vous. Claude remplit « Claude plan » ; vous corrigez dans la conversation jusqu'à ce que tout tienne.</td></tr>
-<tr><td>À tout moment</td><td>Ajoutez des lignes à la note du jour : dictez (Siri : « note : … »), écrivez, lancez <code>cc todo "…"</code>, ou demandez à une session Claude. Des lignes, pas des paragraphes : un verbe, l'entrée, le résultat attendu.</td></tr>
-<tr><td>Le matin, sur le Mac</td><td><code>cc inbox</code>. Les rendez-vous et rappels se rangent, les tâches arrivent au cockpit reformulées en verbe + entrée + résultat. <code>cc me &lt;id&gt;</code> sur celles que vous seul pouvez faire, puis <code>cc run</code>, et vous pouvez partir.</td></tr>
-<tr><td>De retour au bureau</td><td><code>cc cockpit</code> : les tâches <i>à relire</i> ont leurs résultats dans <code>output/</code>, avec un README qui dit quoi vérifier. <code>cc &lt;session&gt;</code> puis <code>claude -c</code> pour continuer avec la session qui l'a fait ; <code>cc clean</code> pour fermer le reste.</td></tr>
-<tr><td>Dans la journée</td><td><code>cc</code> pour passer dans une session ; <code>Option+←/→</code> pour naviguer entre elles ; <code>Ctrl-b d</code> pour tout laisser tourner.</td></tr>
-<tr><td>Quand vous envoyez</td><td>Copiez un brouillon depuis Rappels, envoyez-le vous-même, cochez-le (avec l'extension 1, ouvrez-le dans Gmail et envoyez-le de là). La note et le cockpit suivent en cinq minutes.</td></tr>
-<tr><td>Vendredi</td><td><code>cc memo</code>, dictez ce que les sessions ne peuvent pas savoir, <code>cc memo --message</code>, envoyez.</td></tr>
-</table>
-
 <h2>Sécurité</h2>
 <p class="lead">La règle : <b>Claude rédige, vous envoyez.</b> Tel qu'installé, Claude n'a aucune connexion à votre messagerie ni à WhatsApp. Il ne peut donc envoyer aucun message à votre place, et il ne circule pas librement dans tout votre ordinateur. Le planificateur n'écrit que dans son propre agenda.</p>
-<h3>Qui fait quoi</h3>
-<table>
-<tr><th>Étape</th><th>Qui</th><th>Ce qui se passe</th></tr>
-<tr><td>1. Noter</td><td>Vous</td><td>Vous ajoutez une ligne à votre note de to-dos.</td></tr>
-<tr><td>2. Trier</td><td>Votre Mac</td><td><code>cc inbox</code> classe la ligne et la place dans le cockpit.</td></tr>
-<tr><td>3. Rédiger</td><td>Claude, dans la sandbox</td><td>Une session travaille dans son dossier de projet et écrit un brouillon. Elle n'a aucun moyen de l'envoyer. Avec l'extension 2, Gemini rédige les textes longs et Claude vérifie les faits.</td></tr>
-<tr><td>4. Relire</td><td>Vous</td><td>Le brouillon attend dans Rappels, ou dans Gmail avec l'extension 1. Vous le lisez et vous le corrigez.</td></tr>
-<tr><td>5. Envoyer</td><td>Vous</td><td>Vous le collez dans votre messagerie ou WhatsApp, ou ouvrez le brouillon Gmail, et vous envoyez. Claude n'intervient pas.</td></tr>
-<tr><td>6. Clore</td><td>Vous, puis votre Mac</td><td>Vous cochez le rappel. La ligne de la note reçoit sa coche et la tâche quitte le cockpit.</td></tr>
-</table>
 <h3>Ce que Claude peut atteindre, et ce qu'il ne peut pas</h3>
 <table>
 <tr><th>Domaine</th><th>Accès</th><th>Comment c'est garanti</th></tr>
@@ -356,12 +325,11 @@ echo "Reply with one word: ready" | gemini-write --type email --draft   # test, 
 <li><b>La lecture.</b> La sandbox limite l'écriture bien plus que la lecture : bloquez ce que vous ne voulez pas voir lu.</li>
 <li><b>Les données sensibles.</b> Ce qu'une session lit est envoyé à Claude pour être traité. Vérifiez vos propres règles avant de l'orienter vers des données personnelles ou de recherche.</li>
 </ul>
-<h3>Le détail des niveaux</h3>
+<h3>Autres garde-fous</h3>
 <table>
 <tr><th>Niveau</th><th>Règle</th></tr>
 <tr><td>Notes</td><td>Seul le dossier Notes « Claude » est lu ; jamais les notes verrouillées ; une ligne commençant par 🔒, <code>privé</code> ou <code>//</code> est ignorée. La synchronisation des coches n'ouvre que les notes dont le titre contient « To dos ».</td></tr>
 <tr><td>Disque</td><td>Sandbox de Claude Code (Seatbelt, appliqué par macOS) : les sessions n'écrivent que dans leur dossier de projet et dans le journal, le cockpit et la file ; elles ne lisent jamais <code>~/.ssh</code>, les trousseaux, les cookies, le mail, les messages, les fichiers <code>.env</code> ni les clés ; elles n'écrivent jamais dans un dossier <code>raw/</code>. Les dossiers cloud (<code>~/Library/CloudStorage</code> : Dropbox, iCloud Drive) peuvent refuser les commandes en sandbox avec « Operation not permitted » : testez les vôtres avant de mettre en file un travail qui en dépend.</td></tr>
-<tr><td>Réseau</td><td>Les commandes shell n'atteignent qu'une courte liste de domaines ; la recherche web passe par les outils de Claude, autorisés pour une liste de sources de référence que vous pouvez étendre.</td></tr>
 <tr><td>Secrets</td><td>Clés d'API dans le trousseau macOS : <code>security add-generic-password -a "$USER" -s &lt;nom&gt; -T /usr/bin/security -U -w</code> (le <code>-T</code> évite une demande de mot de passe à chaque lecture).</td></tr>
 <tr><td>Autonomie</td><td>Les sessions en file tournent en <code>acceptEdits</code> : modifications de fichiers et commandes en sandbox autorisées, tout le reste refusé plutôt que demandé. Elles n'envoient, ne publient, ne poussent et ne suppriment jamais rien.</td></tr>
 </table>
@@ -376,9 +344,6 @@ echo "Reply with one word: ready" | gemini-write --type email --draft   # test, 
 <tr><td>Un résultat reste vague</td><td>la ligne de tâche l'était : réécrivez-la en verbe + entrée + résultat, <code>cc reset &lt;id&gt;</code>, <code>cc run</code></td></tr>
 <tr><td>Vous ne savez plus où vous en êtes</td><td><code>cd ~/scratch &amp;&amp; claude</code>, puis demandez : « où en est la file ? »</td></tr>
 </table>
-
-<h2>Ce que ce n'est pas</h2>
-<p>Le kit n'envoie rien. Les messages et les mails sont des brouillons que vous copiez et envoyez vous-même ; les sessions écrivent des fichiers, elles ne publient jamais. Il ne touche pas aux données brutes. Il ne partage rien entre machines : l'état vit dans <code>~/scratch</code> et <code>~/.config/claude-launcher</code> sur votre Mac. Et c'est un ensemble de fichiers zsh et Python lisibles en un après-midi, ce qui explique qu'il soit partagé ainsi plutôt que sous forme d'application.</p>
 
 <h2>Crédits</h2>
 <p>Construit avec Claude, en une matinée, à partir des guides Claude Code de <a href="https://claudeblattman.com">Claude Blattman</a> (la ressource ouverte de Chris Blattman pour les professionnels qui ne codent pas, mise à jour en novembre 2026 ; son <a href="https://github.com/chrisblattman/claudeblattman">kit de démarrage</a>, sept skills pour les conseils d'agents, les relectures à froid, la connexion à d'autres IA et les passations de session, est une bonne étape suivante, tout comme son guide pour <a href="https://claudeblattman.com/how-i-improve-the-work/">apprendre de vos propres corrections</a>). Le kit est sous licence MIT : prenez-le, modifiez-le, partagez-le.</p>
@@ -403,7 +368,7 @@ document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',a
   try{
     if(b.dataset.copy==='prompt'){await navigator.clipboard.writeText(SETUP_PROMPT);say('Copié. Collez-le dans Claude Code.')}
     else{await navigator.clipboard.writeText(await installer());say('Copié. Collez-le dans le Terminal et appuyez sur Entrée (ou : pbpaste | zsh).')}
-  }catch(e){say("La copie a échoué. Utilisez le lien de téléchargement à l'étape 2.")}
+  }catch(e){say("La copie a échoué. Utilisez le lien de téléchargement à l'étape 1.")}
 }));
 document.getElementById('dl-schema').addEventListener('click',()=>{
   const svg=document.getElementById('schema').outerHTML;

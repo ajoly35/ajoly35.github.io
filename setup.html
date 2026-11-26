@@ -37,7 +37,7 @@ button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial
   </header>
 
 <p class="small"><a href="setup-fr.html" lang="fr">Version française</a></p>
-<h1>Research with Claude: do more, check everything</h1>
+<h1>Research with Claude</h1>
 <p class="lead">Research agents now handle much of the slow work of research in the background, from finding and reading papers to gathering public data, drafting and checking, while you decide what matters and check the results. Claude Code is the tool; this page shares the skills, reviewer agents and routines I use every day, and how to install them in an afternoon. Nothing is sent or published without you.</p>
 
 <div class="box export"><p><b>Take the whole setup with you</b></p>
@@ -61,6 +61,7 @@ button{font:500 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial
 <pre>curl -fsSL https://claude.ai/install.sh | bash
 claude        # sign in once, then ask it anything to check it answers</pre>
 <p>Then install the research kit below, and the workflow kit further down if you want the full routine.</p>
+<p class="small">If you are new to the terminal, the clearest start for non-developers is Chris Blattman's <a href="https://claudeblattman.com/starter-kit/newcomers/">Your first session</a> guide, followed by his <a href="https://claudeblattman.com/">checklist of essentials</a> (refreshed November 2026).</p>
 <h2 id="research-kit">The research kit</h2>
 <p>One paste installs eight skills and three reviewer agents into Claude Code, skipping anything you already have so your own versions are never overwritten. Everything is plain text, so you can read it before installing.</p>
 <table>
@@ -107,7 +108,6 @@ claude        # sign in once, then ask it anything to check it answers</pre>
 <div class="flow"><span>Meeting</span> <i>→</i> <span>Wispr Flow transcript</span> <i>→</i> <span>Claude Code, via MCP</span> <i>→</i> <span>matched to the Calendar event</span> <i>→</i> <span>Gmail and Slack drafts, to-dos</span></div>
 <h2 id="workflow">The workflow kit: plan, delegate, review, send</h2>
 <p>Claude does the routine work in the background. You decide what matters, check what it produced, and send everything yourself. It takes ten minutes on Sunday and a few minutes each morning and evening.</p>
-<h2>How it works</h2>
 <ol class="words">
 <li><b>Plan (Sunday, 10 minutes).</b> Tell Claude your priorities for the week, each with a number of hours. A small script turns them into time blocks in a separate calendar, around the fixed parts of your week (exercise, commute, lunch, a daily buffer for new requests), and lists the hours that do not fit, so you cut or reorder before the week starts. With add-on 1, you can also plan a single day, for example the evening before: list your priorities with durations and Claude lays them out in the "Claude plan" calendar with breaks and one colour per priority. It tells you which durations it guessed.</li>
 <li><b>Delegate (any time).</b> Write the tasks you want Claude to do in one note, a line each: a verb, the input, the output. Personal tasks stay in your own lists, which Claude never reads. In the morning, one command sorts the note and starts Claude sessions in the background, each in the right project folder.</li>
@@ -136,26 +136,18 @@ claude        # sign in once, then ask it anything to check it answers</pre>
 </table>
 <p class="small">Each project folder carries a <code>CLAUDE.md</code> (what the project is, where raw data lives, the rules), so a session never needs the context explained twice. Raw data is treated as read-only everywhere.</p>
 
-<h3>Coming from VS Code</h3>
-<p>Your Claude Code conversations in VS Code are kept on disk, per project folder, so closing the windows loses nothing but what was running at that moment. To continue one from the terminal: <code>cc &lt;name&gt; -c</code> resumes the latest conversation in that folder, or <code>cd</code> into it and <code>claude --resume</code> to pick from a list. Project context lives in each folder's <code>CLAUDE.md</code>, which every new session reads by itself. Use zsh, the Mac's default shell: <code>cc</code> doesn't exist in bash.</p>
+<h2>Install the workflow kit in three steps</h2>
 
-<h2>Install in four steps</h2>
-
-<div class="step"><div class="n">1</div><div><h3>Claude Code on the Mac</h3>
-<p>You need a Claude account (Pro or Max), the <a href="https://claude.ai/download">Claude desktop app</a>, and Claude Code. The clearest starting point for non-developers is Chris Blattman's <a href="https://claudeblattman.com/starter-kit/newcomers/">Your first session</a>, followed by his <a href="https://claudeblattman.com/">checklist of essentials</a> (refreshed November 2026); the short version:</p>
-<pre>curl -fsSL https://claude.ai/install.sh | bash
-claude        # sign in once, then type anything to check it answers</pre>
-<p class="small">Homebrew is needed for <code>tmux</code> and <code>fzf</code>: <a href="https://brew.sh">brew.sh</a>, one command to paste.</p></div></div>
-
-<div class="step"><div class="n">2</div><div><h3>The kit, in one paste</h3>
+<div class="step"><div class="n">1</div><div><h3>The kit, in one paste</h3>
 <p>The script below contains every file of the kit (25 files, all plain text, nothing downloaded from anywhere). It writes them to <code>~/claude-kit</code> and runs the installer: launcher, scripts, Quick Actions, tmux config, a scratch folder with a project template, and one line in your <code>.zshrc</code>. Read it first if you like; that is the point of shipping it as text.</p>
 <p><button id="copy">Copy the installer</button> &nbsp; <a href="assets/claude-kit-installer.zsh" download>or download it (.zsh, 110 KB)</a> <span id="ok" class="small"></span></p>
 <p>Then in Terminal: paste, press Enter. Or, to run it straight from the clipboard:</p>
 <pre>pbpaste | zsh</pre>
 
+<p class="small">Homebrew is needed for <code>tmux</code> and <code>fzf</code>: <a href="https://brew.sh">brew.sh</a>, one command to paste.</p>
 </div></div>
 
-<div class="step"><div class="n">3</div><div><h3>Lock it down, then first run</h3>
+<div class="step"><div class="n">2</div><div><h3>Lock it down, then first run</h3>
 <pre>python3 ~/.config/claude-launcher/merge-settings.py   # sandbox + deny rules into ~/.claude/settings.json
 cc ls                 # should show: scratch
 cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
@@ -164,7 +156,7 @@ cc new first-idea     # a project with its CLAUDE.md, Claude opens on it</pre>
 <p>For each existing work folder: <code>cd</code> into it, <code>cc add</code>, then in the session ask Claude to write the project's <code>CLAUDE.md</code>. From then on <code>cc &lt;name&gt;</code> opens it with its context.</p></div></div>
 
 
-<div class="step"><div class="n">4</div><div><h3>Weekly planner and folder guard</h3>
+<div class="step"><div class="n">3</div><div><h3>Weekly planner and folder guard</h3>
 <p>Download the planner into a folder of your choice: <a href="assets/weekly-planner/plan_week.py" download>plan_week.py</a>, <a href="assets/weekly-planner/template.txt" download>template.txt</a> (your fixed week: edit the times) and <a href="assets/weekly-planner/priorities/2026-11-16.md" download>an example priorities file</a> (put it in a <code>priorities/</code> subfolder). Try it:</p>
 <pre>python3 plan_week.py 2026-11-16                          # preview only
 python3 plan_week.py 2026-11-16 --apple "Claude plan"   # into a calendar named "Claude plan" (create it first)</pre>
@@ -302,31 +294,8 @@ echo "Reply with one word: ready" | gemini-write --type email --draft   # test, 
 
 <p>Every call is logged, with tokens and cost, in <code>~/.config/claude-launcher/ledger/gemini-usage.tsv</code>, and the helper prints the day's total after each call.</p>
 
-<h2>Your week</h2>
-<table>
-<tr><th>When</th><th>What</th></tr>
-<tr><td>Sunday, 10 minutes</td><td>Tell Claude the week's priorities with hours (“grant outline, 3 hours; data cleaning, 5 hours; seminar Wednesday 2pm”). It writes the priorities file and shows the preview; you cut what doesn't fit; it writes the blocks to the calendar.</td></tr>
-<tr><td>Evening, 2 minutes (add-on 1)</td><td>List tomorrow's priorities with durations and appointments. Claude fills “Claude plan”; you correct in the conversation until it fits.</td></tr>
-<tr><td>Anytime</td><td>Add lines to today's note: dictate (Siri: “note: …”), type, run <code>cc todo "…"</code>, or ask a Claude session. Lines, not paragraphs: a verb, the input, the output.</td></tr>
-<tr><td>Morning, Mac</td><td><code>cc inbox</code>. Events and reminders land, tasks go to the cockpit rewritten as verb + input + output. <code>cc me &lt;id&gt;</code> on the ones only you can do, then <code>cc run</code> and walk away.</td></tr>
-<tr><td>Back at the desk</td><td><code>cc cockpit</code>: tasks marked <i>to review</i> have their results in <code>output/</code> with a README saying what to check. <code>cc &lt;session&gt;</code> then <code>claude -c</code> to keep working with the session that did it; <code>cc clean</code> to close the rest.</td></tr>
-<tr><td>Through the day</td><td><code>cc</code> to jump into a session; <code>Option+←/→</code> between them; <code>Ctrl-b d</code> to leave everything running.</td></tr>
-<tr><td>When you send</td><td>Copy a draft from Reminders, send it yourself, tick it (with add-on 1, open it in Gmail and send it there). The note and the cockpit follow within five minutes.</td></tr>
-<tr><td>Friday</td><td><code>cc memo</code>, dictate what the sessions can't know, <code>cc memo --message</code>, send.</td></tr>
-</table>
-
 <h2>Security</h2>
 <p class="lead">The rule: <b>Claude drafts, you send.</b> As installed, Claude has no connection to your email or WhatsApp, so it cannot send a message for you, and it cannot roam your whole computer. The planner writes only to its own calendar.</p>
-<h3>Who does what</h3>
-<table>
-<tr><th>Step</th><th>Who</th><th>What happens</th></tr>
-<tr><td>1. Capture</td><td>You</td><td>You add a line to your to-do note.</td></tr>
-<tr><td>2. Sort</td><td>Your Mac</td><td><code>cc inbox</code> classifies the line and puts it in the cockpit.</td></tr>
-<tr><td>3. Draft</td><td>Claude, in the sandbox</td><td>A session works inside its project folder and writes a draft. It has no way to send it. With add-on 2, Gemini writes the long texts and Claude checks the facts.</td></tr>
-<tr><td>4. Review</td><td>You</td><td>The draft waits in Reminders, or in Gmail with add-on 1. You read it and correct it.</td></tr>
-<tr><td>5. Send</td><td>You</td><td>You paste it into your own mail or WhatsApp, or open the Gmail draft, and press send. Claude is not involved.</td></tr>
-<tr><td>6. Close</td><td>You, then your Mac</td><td>You tick the reminder. The note line gets its tick and the task leaves the cockpit.</td></tr>
-</table>
 <h3>What Claude can and cannot reach</h3>
 <table>
 <tr><th>Area</th><th>Access</th><th>How that is enforced</th></tr>
@@ -357,12 +326,11 @@ echo "Reply with one word: ready" | gemini-write --type email --draft   # test, 
 <li><b>Reading.</b> The sandbox limits writing much more than reading, so block what you would not want read.</li>
 <li><b>Sensitive data.</b> What a session reads is sent to Claude to be processed. Check your own rules before you point it at personal or research data.</li>
 </ul>
-<h3>The layers in detail</h3>
+<h3>Other safeguards</h3>
 <table>
 <tr><th>Layer</th><th>Rule</th></tr>
 <tr><td>Notes</td><td>Only the Notes folder “Claude” is read; locked notes never; a line starting with 🔒, <code>privé</code> or <code>//</code> is skipped. The tick sync opens only notes whose title says “To dos”.</td></tr>
 <tr><td>Disk</td><td>Claude Code's sandbox (Seatbelt, enforced by macOS): sessions write only to their project folder plus the ledger, cockpit and queue; never read <code>~/.ssh</code>, keychains, cookies, mail, messages, <code>.env</code> files or keys; never write to a <code>raw/</code> folder. Cloud folders (<code>~/Library/CloudStorage</code>: Dropbox, iCloud Drive) can refuse sandboxed shell commands with “Operation not permitted”: test yours before you queue work that needs them.</td></tr>
-<tr><td>Network</td><td>Shell commands reach only a short list of domains; web research goes through Claude's own tools, allowed for a list of reference sources you extend.</td></tr>
 <tr><td>Secrets</td><td>API keys in the macOS Keychain: <code>security add-generic-password -a "$USER" -s &lt;name&gt; -T /usr/bin/security -U -w</code> (the <code>-T</code> spares you a password prompt on every read).</td></tr>
 <tr><td>Autonomy</td><td>Queued sessions run in <code>acceptEdits</code>: file edits and sandboxed shell commands yes, anything else refused rather than asked. They never send, post, push or delete.</td></tr>
 </table>
@@ -377,9 +345,6 @@ echo "Reply with one word: ready" | gemini-write --type email --draft   # test, 
 <tr><td>A result is vague</td><td>the task line was: rewrite it as verb + input + output, <code>cc reset &lt;id&gt;</code>, <code>cc run</code></td></tr>
 <tr><td>Not sure what's happening</td><td><code>cd ~/scratch &amp;&amp; claude</code>, then ask: “where is the queue at?”</td></tr>
 </table>
-
-<h2>What it is not</h2>
-<p>It does not send anything. Messages and emails are drafts you copy and send yourself; sessions write files, never post. It does not touch raw data. It does not share anything across machines: the state lives in <code>~/scratch</code> and <code>~/.config/claude-launcher</code> on your Mac. And it is a set of plain zsh and Python files you can read in an afternoon, which is why it is shared this way rather than as an app.</p>
 
 <h2>Credits</h2>
 <p>Built with Claude, in one morning, on top of the Claude Code setup guides at <a href="https://claudeblattman.com">Claude Blattman</a> (Chris Blattman's open resource for professionals who don't code, refreshed in November 2026; his <a href="https://github.com/chrisblattman/claudeblattman">starter kit</a>, seven skills for councils, fresh reviews, connecting other AIs and session handoffs, is a good next step, as is his guide to <a href="https://claudeblattman.com/how-i-improve-the-work/">learning from your own edits</a>). The kit here is MIT-licensed: take it, change it, share it.</p>
@@ -404,7 +369,7 @@ document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',a
   try{
     if(b.dataset.copy==='prompt'){await navigator.clipboard.writeText(SETUP_PROMPT);say('Copied. Paste it into Claude Code.')}
     else{await navigator.clipboard.writeText(await installer());say('Copied. Paste it in Terminal and press Enter (or: pbpaste | zsh).')}
-  }catch(e){say('Copy failed. Use the download link in step 2.')}
+  }catch(e){say('Copy failed. Use the download link in step 1.')}
 }));
 document.getElementById('dl-schema').addEventListener('click',()=>{
   const svg=document.getElementById('schema').outerHTML;
