@@ -63,7 +63,7 @@ claude        # connectez-vous une fois, puis posez-lui une question pour vérif
 <p>Installez ensuite le kit de recherche ci-dessous, puis le kit de travail plus bas si vous voulez la routine complète.</p>
 <p class="small">Si vous débutez avec le terminal, le point de départ le plus clair pour les non-développeurs est le guide <a href="https://claudeblattman.com/starter-kit/newcomers/">Your first session</a> de Chris Blattman, suivi de son <a href="https://claudeblattman.com/">liste des essentiels</a> (actualisé en novembre 2026).</p>
 <h2 id="research-kit">Le kit de recherche</h2>
-<p>Un seul copier-coller installe 28 skills, 15 agents et deux petits scripts dans Claude Code, en ignorant tout ce que vous avez déjà pour ne jamais écraser vos propres versions. Tout est en texte brut, vous pouvez donc tout lire avant d'installer.</p>
+<p>Un seul copier-coller installe 29 skills, 15 agents et trois petits scripts dans Claude Code, en ignorant tout ce que vous avez déjà pour ne jamais écraser vos propres versions. Tout est en texte brut, vous pouvez donc tout lire avant d'installer.</p>
 <table>
 <tr><th>Groupe</th><th>Élément</th><th>Ce qu'il fait</th></tr>
 <tr><td>Littérature et articles</td><td><code>lit-review</code></td><td>revue courte et vérifiée des études causales, en neuf phases avec validations et un registre unique des preuves</td></tr>
@@ -82,6 +82,7 @@ claude        # connectez-vous une fois, puis posez-lui une question pour vérif
 <tr><td></td><td><code>simulate-referee</code></td><td>un éditeur et deux rapporteurs lisent le brouillon</td></tr>
 <tr><td></td><td><code>council</code> + 12 persona agents</td><td>critiques en parallèle, seconde passe contradictoire, modèle externe en option, nouvelle synthèse</td></tr>
 <tr><td>Sessions et contexte partagé</td><td><code>start-session</code>, <code>update-log</code>, <code>close-session</code>, <code>project-status</code></td><td>un historique partagé (<code>PROJECT_HISTORY.md</code>) que tout agent ou co-auteur peut reprendre ; commits seulement avec votre accord</td></tr>
+<tr><td></td><td><code>team-context</code> (+ <code>scripts/slack-post</code>)</td><td>contexte commun avec l'équipe : résumé de fin de session et récapitulatif du vendredi publiés dans le canal Slack du projet, via des webhooks gardés dans le trousseau macOS</td></tr>
 <tr><td></td><td><code>templates/</code></td><td><code>PROJECT_HISTORY.md</code>, <code>AGENTS.md</code>, une boîte <code>document_dump/</code> avec archivage contrôlé par somme de contrôle</td></tr>
 <tr><td>Au quotidien</td><td><code>cockpit</code> (+ <code>scripts/cockpit</code>)</td><td>un seul terminal : agenda du jour, nouveaux mails, brouillons en attente, projets actifs, liste d'actions numérotée avec une note de contexte par action</td></tr>
 <tr><td></td><td><code>plan-day</code></td><td>organise une journée dans un agenda Google « Claude plan », avec pauses et couleurs</td></tr>
@@ -94,7 +95,7 @@ claude        # connectez-vous une fois, puis posez-lui une question pour vérif
 <tr><td></td><td><code>voice-pack</code></td><td>constitue un corpus de vos vrais écrits par type et propose des règles de style</td></tr>
 <tr><td>Règles</td><td><code>rules/model-effort.md</code></td><td>quel modèle et quel effort pour quelle tâche</td></tr>
 </table>
-<p><button id="copy-rk">Copier le kit de recherche</button> &nbsp; <a href="assets/research-kit-installer.zsh" download>ou le télécharger (.zsh, 201 Ko)</a> <span id="ok-rk" class="small"></span></p>
+<p><button id="copy-rk">Copier le kit de recherche</button> &nbsp; <a href="assets/research-kit-installer.zsh" download>ou le télécharger (.zsh, 208 Ko)</a> <span id="ok-rk" class="small"></span></p>
 <p class="small">Collez-le dans le Terminal et appuyez sur Entrée (ou <code>pbpaste | zsh</code>). Il écrit le kit dans <code>~/research-kit</code> et copie les éléments dans <code>~/.claude/skills</code>, <code>~/.claude/agents</code> et <code>~/.local/bin</code>. Pour les outils PDF : <code>brew install poppler</code>.</p>
 <h3 id="coding">Coder à grande échelle</h3>
 <p>Après un test rapide sur 3 éléments, <code>/bulk-classify</code> code de grands volumes (entretiens, résumés, offres d'emploi) avec un prompt figé et des étiquettes fixes via <code>claude -p</code> sur votre abonnement. <code>/label-review</code> génère ensuite une page hors ligne où vous annotez chaque élément avant de voir le choix du modèle, avec un export CSV.</p>
