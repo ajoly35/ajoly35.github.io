@@ -2999,7 +2999,8 @@ cat > "$T/skills/load-shared-context/HOW_TO_LOAD.md" <<'RKIT_EOF_54'
 `SHARED_CONTEXT.md` in this folder is updated after work sessions: where the project stands, what
 changed, decisions, questions for you, and the files to look at.
 
-- **Claude Code:** add this line to the project's CLAUDE.md (or your global one):
+- **Claude Code, in the shared repo:** nothing to do. Clone it and start Claude Code there: CLAUDE.md loads the context.
+- **Claude Code, in a shared folder without a repo:** add this line to the project's CLAUDE.md (or your global one):
   `At the start of every session, read SHARED_CONTEXT.md in this folder and follow its "For agents" section.`
   Or install the `load-shared-context` skill (from the research kit at https://ajoly35.github.io/setup.html)
   and type `/load-shared-context`.
@@ -3017,8 +3018,10 @@ argument-hint: "[path to the shared folder]"
 
 # /load-shared-context
 
-1. Find `SHARED_CONTEXT.md` in the current folder or the path given (or a parent folder).
-2. Read it in full, then `SHARED_CONTEXT_LOG.md` only if the user asks about older work.
+1. In a shared repo this happens automatically (CLAUDE.md imports SHARED_CONTEXT.md). Otherwise find
+   `SHARED_CONTEXT.md` in the current folder, the path given, or a parent folder.
+2. Read the Slack summary and the section for the workstream the user is working on; the rest only if asked.
+   For older work, use the repo's commit log.
 3. Tell the user in 5 lines: where things stand, what changed since their last session, decisions
    that affect what they are about to do, and the questions addressed to them.
 4. Follow the "For agents" section (where data and code live, the rules) for the rest of the session.
@@ -3358,65 +3361,55 @@ mkdir -p "$T/skills/shared-context"
 cat > "$T/skills/shared-context/SKILL.md" <<'RKIT_EOF_69'
 ---
 name: shared-context
-description: Keep a co-author up to date with the work done in your Claude Code sessions on a shared project. Summarises the sessions run in the project folder since the last update (requests, results, files changed, decisions), plus the project history and memory, into one SHARED_CONTEXT.md in the folder you share with the co-author (Dropbox, Drive, a repo), for their agent to load at the start of their own sessions. Use when the user says "update the shared context", "share my progress with <co-author>", "/shared-context", or at the end of a work session on a shared project.
-argument-hint: "[export | status | setup] [project]"
+description: Give a co-author (and every agent they start) your working context on a shared project, loaded automatically. A private GitHub repo holds the code, draft and a short SHARED_CONTEXT.md that the repo's CLAUDE.md imports, so their Claude Code starts with it; Slack exchanges and comments are summarised at the top; changes show in the commit history and in the project's Slack channel. Use for "share my context with <co-author>", "update the shared context", "set up a shared repo", "/shared-context", or at the end of a work session on a shared project.
+argument-hint: "[setup | update] [project]"
 ---
 
 # /shared-context
 
-One file, `SHARED_CONTEXT.md`, in the folder the co-author already shares, written for both a person
-and an agent. The co-author's agent loads it with `/load-shared-context` (or one line in their
-CLAUDE.md), so every session on either side starts from the same state.
+The co-author opens the repo and starts working: Claude Code reads `CLAUDE.md` by itself, and
+`CLAUDE.md` imports `SHARED_CONTEXT.md` (`@SHARED_CONTEXT.md`). Nothing to paste, nothing to remember.
 
-## Config
-`~/claude-system/shared-context/projects.json` (create on first `setup`):
-```json
-{"<project>": {"project_dir": "~/path/to/project",
-               "shared_dir": "~/path/to/folder/shared/with/co-author",
-               "coauthor": "Name",
-               "private": ["paths or topics that must never be shared"],
-               "last_export": "YYYY-MM-DD"}}
+## The context file: short, by workstream
 ```
-`private` always includes the project's own rules (read its CLAUDE.md: anything marked private,
-"for me only", not for the co-author), credentials, participant data and transcripts.
+# <Project>: shared context
+_Updated <date>. Read only the section for what you are working on._
+## From Slack and comments        ← summary of exchanges since the last update (never pasted in full)
+## <Workstream 1>                  ← e.g. Estimates: where it stands, key numbers with their files
+## <Workstream 2>                  ← e.g. Data, Draft
+## Open questions for <co-author>  ← one line each
+```
+No rules, priorities or history sections: the commit log is the history. Each workstream section is
+at most 5 lines, numbers with the file they come from.
 
-## export
-1. **Gather** (read-only):
-   - `python3 -I ~/.claude/skills/shared-context/scripts/session_digest.py <project_dir> --since <last_export>`:
-     requests, closing answers and files touched in each session since the last export;
-   - the project's `PROJECT_HISTORY.md` / `STATUS.md` / `notes/log.md` (latest entries);
-   - memory files that mention the project (`~/.claude/projects/*/memory/*.md`), only facts about the project;
-   - `QUESTIONS.md` in the shared folder (the co-author's questions since last time).
-   Sessions in one folder can cover other topics: keep only what belongs to this project.
-2. **Write** `SHARED_CONTEXT.md` (at most 2 pages), in this order:
-   - *Where things stand* (5 lines max, rewritten each time);
-   - *Since <date>*: what was done, by date; numbers that changed (old → new, with the file);
-     decisions taken and why;
-   - *Answers to your questions* (from QUESTIONS.md, then mark them answered there);
-   - *Open questions for <co-author>*, each one answerable in a line;
-   - *Files to look at*: paths relative to the shared folder, newest first;
-   - *For agents*: one paragraph telling the co-author's agent what the project is, where the data
-     and code live, the rules (e.g. raw data read-only), and to read this file before acting.
-   Keep the previous versions' "Since" sections in `SHARED_CONTEXT_LOG.md` (append-only), so the
-   main file stays short.
-3. **Check before sharing**: a line-by-line privacy pass (each line checked against `private` and the
-   project's rules); every number matches its source file; no session text quoted at length. Show the user the new file (or the diff) and copy it into the
-   shared folder **only on their yes**, or under a standing rule written in the project's CLAUDE.md
-   ("update the shared context at the end of each session without asking").
-4. Update `last_export` in the config.
+## setup (once per project, each step on the user's yes)
+1. The shared folder (e.g. the project's Dropbox folder already shared with the co-author) becomes the
+   repo. `.gitignore` excludes data, caches and large binaries; check nothing over 50 MB is staged and
+   scan for secrets before the first commit.
+2. Write `CLAUDE.md` (and a copy as `AGENTS.md` for other agents): title, `@SHARED_CONTEXT.md`, one
+   line on where the data lives, one line "questions for <user> go in QUESTIONS.md". Add `QUESTIONS.md`
+   and a 3-line `README.md`.
+3. Create the private repo (`gh repo create <owner>/<name> --private --source . --push`); the user adds
+   the co-author as collaborator.
+4. Slack: in the project's channel, the user installs the GitHub app and runs
+   `/github subscribe <owner>/<name> commits` so each push appears in the channel.
+5. Record the project in `~/claude-system/shared-context/projects.json`
+   (`project_dir`, `repo_dir`, `coauthor`, `private`, `last_update`).
 
-## status
-Sessions since the last export, open questions waiting in QUESTIONS.md, date of the last export.
-
-## setup
-Create the config entry, the empty `QUESTIONS.md` and `SHARED_CONTEXT.md` in the shared folder,
-and `HOW_TO_LOAD.md` there (copy from `~/.claude/skills/load-shared-context/HOW_TO_LOAD.md`) so the
-co-author knows how to point his agent at it.
+## update (end of a work session)
+1. Gather, read-only: `python3 -I ~/.claude/skills/shared-context/scripts/session_digest.py <project_dir>
+   --since <last_update>` (your requests, results, files changed); the project's status or log; Slack
+   threads in the project's channel and comments since the last update (through a connector if one
+   reaches that workspace, otherwise what the user pastes); `QUESTIONS.md`.
+2. Rewrite `SHARED_CONTEXT.md` in the format above. Keep only this project's work, and only what the
+   co-author needs to act.
+3. Privacy pass line by line against `private` (the project's CLAUDE.md rules, private notes,
+   participant data, credentials). Every number checked against its file.
+4. Show the diff. On the user's yes: commit with a one-line message naming what changed, and push.
+   A standing rule in the project's CLAUDE.md can replace the yes.
 
 ## Never
-Share private files or topics; write anywhere in the shared folder other than SHARED_CONTEXT.md,
-SHARED_CONTEXT_LOG.md, QUESTIONS.md and HOW_TO_LOAD.md; send or post the file (Slack or email
-digests are /team-context's job, on the user's yes).
+Commit data or anything private; push without the yes (or standing rule); paste Slack threads in full.
 RKIT_EOF_69
 
 mkdir -p "$T/skills/shared-context/scripts"
