@@ -2,7 +2,9 @@
 
 Adrien Joly, London School of Economics. November 2026.
 
-At STICERD, working with Professor Xavier Jaravel, my research explores how artificial intelligence is implemented inside companies and how it transforms them. I examine what these changes imply upstream: for entry-level hiring, for the role of schools and universities, for what students should learn, and for how we guide young people into careers. Two further themes follow from this agenda: how to bring frontier AI to the many at a reasonable cost, and how AI can change the way universities and governments work together.
+At STICERD, working with Professor Xavier Jaravel, part of my research studies how artificial intelligence is implemented within firms and how it changes the way people work, individually and in teams.
+
+My own research looks upstream, at what this reorganisation of work implies for young people and for policy. First, how we inform and orient students: I am building a compass of university courses and apprenticeships (work in progress) that links each path to its risk of displacement from AI and from Chinese import competition. Second, short-term AI-driven unemployment, especially in entry-level roles. Two further themes follow: how to bring frontier AI to the many at a reasonable cost, and how AI can change the way universities and governments work together.
 
 **1. Entry-level hiring and the changing role of juniors.** When AI produces the first draft, the everyday tasks on which newcomers used to learn a job shrink. I study what firms now expect of junior employees, how daily work is split between newer and more experienced staff, how newcomers still build expertise and judgment, and how the wider economy should adapt to this changing role.
 
