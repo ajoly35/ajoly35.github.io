@@ -16,6 +16,6 @@ At STICERD, working with Professor Xavier Jaravel, my research explores how arti
 
 ## Volunteer work
 
-1. I run Préparer l'avenir, an independent volunteer think tank that writes policy notes on education, economics, energy, innovation and AI policy ([website](https://ajoly35.github.io/preparer-lavenir/)).
+1. I run Préparer l'avenir, an independent volunteer think tank that writes policy notes on education, economics, energy, innovation and AI policy.
 2. Education policy: research on reforms of the French national education system with Christine Gavini, former regional head of French national education for Normandy.
 3. Strategist for the national door-knocking effort of Horizons for the 2027 French presidential election, using electoral data and novel AI-led methods to make door knocking more effective.
